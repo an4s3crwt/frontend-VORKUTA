@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+
+# Build output
+build/
+
+# Dependencies
+/package-lock.json
+/yarn.lock
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# dotenv environment variables file
+.env
+
+# IDE or Editor config files
+.idea/
+.vscode/
+
+# Optional npm cache directory
+.npm/
+
+# Next.js build output
+.next/
+
+# React Native
+.expo/
+
+# Static assets
+/public/static/
+
+# Coverage directory used by testing tools
+coverage/
+
+# Test directories
+tests/
+*.test.js

@@ -1,0 +1,227 @@
+/* Estilos Minimalistas Monocromáticos */
+.minimal-container {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #333;
+    background-color: #f9f9f9;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.minimal-nav {
+    background-color: #fff;
+    border-bottom: 1px solid #e1e1e1;
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #000;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.nav-logo {
+    margin-right: 10px;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: #f0f0f0;
+}
+
+/* Hero Section */
+.minimal-hero {
+    background-color: #000;
+    color: #fff;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 800;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: #ccc;
+}
+
+.hero-button {
+    display: inline-block;
+    background-color: #fff;
+    color: #000;
+    padding: 0.8rem 2rem;
+    border-radius: 24px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.hero-button:hover {
+    background-color: #e6e6e6;
+    transform: translateY(-2px);
+}
+
+/* Search Section */
+.search-section {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 3rem;
+    font-weight: 700;
+}
+
+.search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.search-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.search-title {
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.search-icon {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.search-input-container {
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #999;
+}
+
+/* Result Styles */
+.result-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1.2rem;
+    transition: all 0.2s;
+}
+
+.result-card:hover {
+    background-color: #fafafa;
+}
+
+.result-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.result-row {
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+
+.result-row:last-child {
+    margin-bottom: 0;
+}
+
+.result-label {
+    font-weight: 600;
+    margin-right: 0.5rem;
+    color: #555;
+    min-width: 80px;
+}
+
+.result-value {
+    color: #000;
+}
+
+/* Loading and Error States */
+.loading-indicator {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0;
+}
+
+.loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #ddd;
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error-message {
+    color: #d32f2f;
+    padding: 0.8rem;
+    background-color: #fdecea;
+    border-radius: 4px;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .search-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+}

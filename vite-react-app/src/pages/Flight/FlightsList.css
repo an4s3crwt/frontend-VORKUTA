@@ -1,0 +1,151 @@
+/* FlightsList.css */
+.flights-container {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #0f1419;
+    background-color: #fff;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.map-controls {
+    padding: 1rem;
+    border-bottom: 1px solid #e1e1e1;
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.search-filter {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.2s;
+}
+
+.filter-input:focus {
+    border-color: #1d9bf0;
+}
+
+.filter-button {
+    padding: 0.75rem 1.5rem;
+    background-color: #0f1419;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.filter-button:hover {
+    background-color: #272c30;
+}
+
+.map-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.flight-map {
+    height: 100%;
+    width: 100%;
+    background-color: #f7f9fa;
+}
+
+/* Popup Styles */
+.custom-popup .leaflet-popup-content-wrapper {
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.custom-popup .leaflet-popup-content {
+    margin: 0;
+    width: auto !important;
+}
+
+.popup-container {
+    width: 280px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.popup-header {
+    padding: 1rem 1rem 0.5rem;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.popup-title {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.popup-callsign {
+    color: #536471;
+    font-size: 0.9rem;
+}
+
+.popup-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.popup-details {
+    padding: 1rem;
+}
+
+.popup-route {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.popup-meta {
+    color: #536471;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.popup-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.popup-link {
+    color: #1d9bf0;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-block;
+    transition: color 0.2s;
+}
+
+.popup-link:hover {
+    color: #1a8cd8;
+    text-decoration: underline;
+}
+
+/* Leaflet Marker Adjustments */
+.leaflet-marker-icon {
+    filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.2));
+}
