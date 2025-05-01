@@ -9,11 +9,16 @@ import Home from "./pages/Home";
 import Layout from "./pages/Layout";
 import NotFound from "./pages/NotFound";
 import NearbyFlightsScanner from './pages/NearbyFlightsScanner';
+import Login from './pages/Login';
 
+import Register from './pages/Register';
 export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path='/login' element={<Login />} />
+                <Route path='/register' element={<Register />} />
+
                 {/* Ruta principal */}
                 <Route path="/" element={<Layout />}>
                     <Route index element={<Home />} />

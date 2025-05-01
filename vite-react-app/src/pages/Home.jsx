@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate  } from 'react-router-dom';
+
+
 import "./home.css";
 import "./../Navbar";
 
 const BACKEND_URL = "http://localhost:8000";
 
 export default function Home() {
+    const navigate = useNavigate();
     const [aircraftResults, setAircraftResults] = useState({
         visible: false,
         loading: false,
@@ -20,6 +23,18 @@ export default function Home() {
         data: null
     });
             
+
+
+    //Verificar si el Usuario está autenticado
+    useEffect(()=> {
+        const token = localStorage.getItem("jwt_token");
+
+        if(!token){
+            navigate("/login");
+        }
+    }, [navigate]);
+
+
     const handleAircraftSearch = async (e) => {
         const registration = e.target.value.trim();
 
