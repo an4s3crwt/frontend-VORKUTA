@@ -12,7 +12,8 @@ export default function Login() {
         e.preventDefault();
         try {
             const response = await api.post('/login', { email, password });
-            const token = response.data.access_token;
+            const token = response.data.jwt_token;
+            console.log(token);
             localStorage.setItem('jwt_token', token);
             navigate('/'); // ✅ redirigir al home o dashboard
         } catch (error) {

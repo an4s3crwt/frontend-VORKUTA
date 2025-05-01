@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import React, { useEffect, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { Link, useParams } from "react-router-dom";
+import { api } from './../../api'; // Importamos la configuración de axios
 
 import "./FlightsList.css";
 
@@ -85,7 +86,7 @@ function InfoPopup({ icao, callsign, altitude, speed, bl }) {
                 }
 
                 // Fetch de datos si no hay caché
-                const [imgResponse, aircraftResponse] = await Promise.all([
+                const [imgResponse, aircraftResponse] = await Promise.all([ 
                     fetch(`https://hexdb.io/hex-image-thumb?hex=${icao}`),
                     fetch(`https://hexdb.io/api/v1/aircraft/${icao}`)
                 ]);
@@ -181,8 +182,6 @@ function FlightList() {
     }, [infoSlug]);
 
     useEffect(() => {
-        const OPENSKY_API_URL = 'http://localhost:8000/api/opensky/states';
-
         const fetchLiveData = async () => {
             setIsLoading(true);
             try {
@@ -196,20 +195,22 @@ function FlightList() {
                     return;
                 }
 
-                // Fetch de datos nuevos
-                const response = await fetch(OPENSKY_API_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
+                // Verificar si existe un token JWT
+                const token = localStorage.getItem('jwt_token');
+                if (!token) {
+                    throw new Error('Unauthorized: No token found');
+                }
 
-                const data = await response.json();
+                // Hacer la solicitud usando axios con el token
+                const response = await api.get('/opensky/states'); // Usamos la instancia de axios
 
-                if (!data.states || !data.states.some(f => f[5] !== null && f[6] !== null)) {
-                    
+                if (!response.data.states || !response.data.states.some(f => f[5] !== null && f[6] !== null)) {
                     throw new Error('No valid flight data received');
                 }
 
                 const limitedFlights = {
-                    time: data.time,
-                    states: data.states
+                    time: response.data.time,
+                    states: response.data.states
                         .filter(flight => flight[0] && flight[5] && flight[6])
                         .slice(0, 2500)
                 };
@@ -223,11 +224,7 @@ function FlightList() {
 
                 // Enviar datos al backend
                 try {
-                    await fetch('http://localhost:8000/api/flight-data/store', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ states: limitedFlights.states }),
-                    });
+                    await api.post('/flight-data/store', { states: limitedFlights.states });
                 } catch (storeError) {
                     console.warn('Backend storage failed:', storeError);
                 }
@@ -257,7 +254,6 @@ function FlightList() {
         <div className="flights-container">
             {isLoading && <div className="loading-overlay">Loading flight data...</div>}
             {error && <div className="error-banner">{error}</div>}
-
 
             <div className="map-wrapper">
                 <MapContainer
