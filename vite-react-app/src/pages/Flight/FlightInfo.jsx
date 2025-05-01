@@ -8,6 +8,9 @@ import 'leaflet.awesome-markers/dist/leaflet.awesome-markers.css';
 import 'leaflet.awesome-markers';
 import "./FlightInfo.css";
 import 'font-awesome/css/font-awesome.min.css';
+
+
+
 const airportIcon = new L.Icon({
     iconUrl: '/a1.png',
    iconSize: [25, 25],

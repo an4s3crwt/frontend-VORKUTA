@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { api } from './../api'; // Importamos la configuración de axios
+
 
 function NearbyFlightsScanner() {
     const [location, setLocation] = useState(null);
@@ -24,8 +26,8 @@ function NearbyFlightsScanner() {
 
     const fetchNearbyFlights = async (lat, lon) => {
         try {
-            const res = await axios.get(
-                `http://localhost:8000/api/flights/nearby?lat=${lat}&lon=${lon}&radius=100`
+            const res = await api.get(
+                `/flights/nearby?lat=${lat}&lon=${lon}&radius=100`
             );
             setFlights(res.data.nearby_flights);
         } catch (e) {
