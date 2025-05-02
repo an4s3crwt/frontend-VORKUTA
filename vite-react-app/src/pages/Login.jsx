@@ -15,7 +15,7 @@ export default function Login() {
             const token = response.data.jwt_token;
             console.log(token);
             localStorage.setItem('jwt_token', token);
-            navigate('/'); // ✅ redirigir al home o dashboard
+            navigate('/'); // redirigir al home o dashboard
         } catch (error) {
             setError('Credenciales incorrectas');
         }

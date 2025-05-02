@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { api } from './../api'; // Importamos la configuración de axios
@@ -26,12 +25,20 @@ function NearbyFlightsScanner() {
 
     const fetchNearbyFlights = async (lat, lon) => {
         try {
-            const res = await api.get(
-                `/flights/nearby?lat=${lat}&lon=${lon}&radius=100`
-            );
+            const res = await api.get("/flights/nearby", {
+                params: { lat, lon, radius: 100 },
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            console.log(res.data);  // Add this to see the response
+
             setFlights(res.data.nearby_flights);
         } catch (e) {
-            setError("Failed to fetch flights");
+            console.error(e);
+            console.error(e.response?.data); // Log the response error from the backend
+            setError(e.response?.data?.message || "Failed to fetch flights");
+            
         }
     };
 
