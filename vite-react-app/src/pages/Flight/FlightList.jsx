@@ -182,6 +182,17 @@ function FlightList() {
     }, [infoSlug]);
 
     useEffect(() => {
+
+        //Revisa el caché en localstorage
+        //Si no hay datos válidos , hace una petición a tu backend get /opensky/states
+        //usas axios api.get con el JWT desde localstorage
+
+
+
+        //en backend
+        //verifica el token JWT
+        //usa las credenciales guardadas en config/services para ahcer la llamada a opensky vía http::withBasicAuth
+
         const fetchLiveData = async () => {
             setIsLoading(true);
             try {
@@ -211,7 +222,7 @@ function FlightList() {
                 const limitedFlights = {
                     time: response.data.time,
                     states: response.data.states
-                        .filter(flight => flight[0] && flight[5] && flight[6])
+                        .filter(flight => flight[0] && flight[5] && flight[6] && flight[1]) //has callsign
                         .slice(0, 2500)
                 };
 

@@ -13,17 +13,21 @@ import 'font-awesome/css/font-awesome.min.css';
 
 const airportIcon = new L.Icon({
     iconUrl: '/a1.png',
-   iconSize: [25, 25],
+    iconSize: [25, 25],
     markerColor: 'yellow',
     iconColor: 'black'
 });
 
-const airplaneIcon =new L.Icon({
+const airplaneIcon = new L.Icon({
     iconUrl: '/flight1.jpg',
     iconSize: [25, 25],
     markerColor: 'blue',
     iconColor: 'white'
 });
+
+
+
+
 function StatusAlert({ onGround, callSign }) {
     let statusText = "";
     let statusClass = "";
@@ -105,7 +109,13 @@ function FlightInfo() {
 
         // Fetch live flight data
         const fetchFlightData = () => {
-            fetch(fetchurl2)
+            const username = "an4s3crwt";  // Replace with your OpenSky username
+            const password = "Mentaybolita1";  // Replace with your OpenSky password
+            const headers = new Headers();
+        
+            headers.set('Authorization', 'Basic ' + btoa(username + ":" + password));
+        
+            fetch(fetchurl2, { headers })
                 .then((response) => response.json())
                 .then((data) => {
                     if (!data.states || !data.states[0] || data.states[0][6] == null) {
@@ -117,6 +127,7 @@ function FlightInfo() {
                 })
                 .catch(() => setDefaultLiveData());
         };
+        
 
         const updateRouteInfo = (callsign) => {
             fetch(`https://hexdb.io/callsign-route-iata?callsign=${callsign}`)
