@@ -32,13 +32,19 @@ function NearbyFlightsScanner() {
                 }
             });
             console.log(res.data);  // Add this to see the response
+            // Add index references for the new data structure
+            const processedFlights = res.data.nearby_flights.map(flight => {
+                // Distance is now the last element in the array
+                const distance = flight[flight.length - 1];
+                return [...flight, distance]; // Or restructure as needed
+            });
 
-            setFlights(res.data.nearby_flights);
+            setFlights(processedFlights);
         } catch (e) {
             console.error(e);
             console.error(e.response?.data); // Log the response error from the backend
             setError(e.response?.data?.message || "Failed to fetch flights");
-            
+
         }
     };
 
@@ -87,6 +93,7 @@ function NearbyFlightsScanner() {
                             <th>Speed (km/h)</th>
                             <th>Lat</th>
                             <th>Lon</th>
+                            <th>Distance</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,6 +105,7 @@ function NearbyFlightsScanner() {
                                 <td>{Math.round(flight[9])}</td>
                                 <td>{flight[6]?.toFixed(2)}</td>
                                 <td>{flight[5]?.toFixed(2)}</td>
+                                <td>{flight[flight.length - 1]?.toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
