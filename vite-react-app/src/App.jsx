@@ -1,6 +1,8 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import 'font-awesome/css/font-awesome.min.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './components/PrivateRoute';
+import PublicRoute from './components/PublicRoute';
 
 // Páginas
 import Layout from './pages/Layout';
@@ -12,7 +14,10 @@ import NotFound from './pages/NotFound';
 import NearbyFlightsScanner from './pages/NearbyFlightsScanner';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import PublicRoute from './components/PublicRoute';
+import Profile from './pages/Profile';
+import Logout from './pages/Logout';
+import './App.css';
+
 
 export default function App() {
     return (
@@ -43,6 +48,10 @@ export default function App() {
                     <Route path="flight-info/:icao" element={<PrivateRoute element={<FlightInfo />} />} />
                     <Route path="map" element={<PrivateRoute element={<FlightList />} />} />
                     <Route path="scanner" element={<PrivateRoute element={<NearbyFlightsScanner />} />} />
+
+                        {/* Rutas para perfil y logout */}
+                        <Route path="profile" element={<PrivateRoute element={<Profile />} />} />
+                    <Route path="logout" element={<PrivateRoute element={<Logout />} />} />
                 </Route>
 
 
