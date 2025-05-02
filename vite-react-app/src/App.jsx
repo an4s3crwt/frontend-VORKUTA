@@ -10,8 +10,10 @@ import Layout from "./pages/Layout";
 import NotFound from "./pages/NotFound";
 import NearbyFlightsScanner from './pages/NearbyFlightsScanner';
 import Login from './pages/Login';
-
 import Register from './pages/Register';
+import Profile from './pages/Profile'; 
+import Logout from './pages/Logout';   
+
 export default function App() {
     return (
         <BrowserRouter>
@@ -20,7 +22,7 @@ export default function App() {
                 <Route path='/register' element={<Register />} />
 
                 {/* Ruta principal */}
-                <Route path="/" element={<Layout />}>
+                <Route path="/" element={<Layout />} >
                     <Route index element={<Home />} />
 
                     {/* Rutas de aeropuertos */}
@@ -34,6 +36,10 @@ export default function App() {
                     <Route path="map" element={<FlightList />} />
 
                     <Route path='/scanner' element={<NearbyFlightsScanner />} />
+
+                    {/* Rutas de usuario */}
+                    <Route path="/profile" element={<Profile />} />  {/* Ruta para ver el perfil */}
+                    <Route path="/logout" element={<Logout />} />    {/* Ruta para hacer logout */}
 
                     {/* Ruta para páginas no encontradas */}
                     <Route path="*" element={<NotFound />} />
