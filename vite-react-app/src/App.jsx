@@ -12,13 +12,28 @@ import NotFound from './pages/NotFound';
 import NearbyFlightsScanner from './pages/NearbyFlightsScanner';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import PublicRoute from './components/PublicRoute';
 
 export default function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path='/login' element={<Login />} />
-                <Route path='/register' element={<Register />} />
+                <Route
+                    path="/login"
+                    element={
+                        <PublicRoute>
+                            <Login />
+                        </PublicRoute>
+                    }
+                />
+                <Route
+                    path="/register"
+                    element={
+                        <PublicRoute>
+                            <Register />
+                        </PublicRoute>
+                    }
+                />
 
                 {/* Ruta principal */}
                 <Route path="/" element={<Layout />}>
