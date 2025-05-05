@@ -21,12 +21,16 @@ export default function Login() {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+            
+            //llamada al backend , los interceptores de /api.js ya obtieenen el token de firebase para pasarlo x header al backenddd
+            const response = await api.post('/login');
+            const backendUser = response.data;
 
-            dispatch(login({ user: { email: user.email, uid: user.uid }, token: null }));
+            dispatch(login({ user: backendUser.user, token: null }));
             navigate('/');
         } catch (err) {
-            setError('Credenciales incorrectas o error de red.');
             console.error('Login error:', err);
+            setError('Credenciales incorrectas o error de red.');
         }
 
         setLoading(false);

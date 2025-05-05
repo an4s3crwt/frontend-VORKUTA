@@ -4,6 +4,8 @@ import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { login } from '../redux/authSlice';
+import api from '../api';
+
 
 export default function Register() {
     const [formData, setFormData] = useState({
@@ -28,20 +30,33 @@ export default function Register() {
         e.preventDefault();
         setLoading(true);
         setErrors({});
-
+    
         if (formData.password !== formData.password_confirmation) {
             setErrors({ password: 'Las contraseñas no coinciden' });
             setLoading(false);
             return;
         }
-
+    
         try {
+            // Crear el usuario en Firebase
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
             await updateProfile(userCredential.user, { displayName: formData.name });
-
+    
+            // Obtener el UID del usuario recién creado
             const user = userCredential.user;
-            dispatch(login({ user: { email: user.email, uid: user.uid }, token: null }));
-
+    
+            // Ahora enviar los datos del usuario al backend para registrar en tu base de datos
+            const response = await api.post('/register', {
+                firebase_uid: user.uid,
+                email: user.email,
+                name: formData.name,
+            });
+    
+            const backendUser = response.data; // Esto debería devolver el usuario registrado desde tu backend
+    
+            // Login automático después del registro
+            dispatch(login({ user: backendUser.user, token: null }));
+    
             navigate('/');
         } catch (err) {
             let message = 'Error en el registro';
@@ -49,13 +64,9 @@ export default function Register() {
                 message = 'Este correo ya está registrado.';
             } else if (err.code === 'auth/invalid-email') {
                 message = 'Correo electrónico no válido.';
-            } else if (err.code === 'auth/weak-password') {
-                message = 'La contraseña es demasiado débil.';
             }
-            
-        
-        
-            setErrors({ general: err.message || 'Error en el registro' });
+    
+            setErrors({ general: err.message || message });
         } finally {
             setLoading(false);
         }
