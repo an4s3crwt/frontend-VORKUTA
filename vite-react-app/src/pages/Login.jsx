@@ -4,6 +4,8 @@ import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { login } from '../redux/authSlice';
+import api from './../api';
+
 
 export default function Login() {
     const [email, setEmail] = useState('');
