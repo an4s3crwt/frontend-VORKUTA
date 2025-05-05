@@ -1,9 +1,25 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
-function Blog() {
+import { Outlet, Navigate } from "react-router-dom";
+
+function Flight() {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <LoadingSpinner fullPage />;
+    }
+
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
+
     return (
-        <Outlet />
+        <div className="flight-layout">
+         
+            <main className="flight-content">
+                <Outlet />
+            </main>
+        </div>
     );
 }
 
-export default Blog;
+export default Flight;

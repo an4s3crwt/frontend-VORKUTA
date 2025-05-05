@@ -1,17 +1,17 @@
 import axios from "axios";
+import { getIdToken } from "firebase/auth";
+import { auth } from "./firebase"; // Asegúrate de tener auth exportado desde tu config de Firebase
 
-const BACKEND_URL = "http://localhost:8000/api";
-
-export const api = axios.create({
-  baseURL: BACKEND_URL,
+const api = axios.create({
+  baseURL: "http://127.0.0.1:8000/api/v1",
 });
 
-// Interceptor para agregar el token JWT
+// Interceptor para incluir el token de Firebase en cada petición
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("jwt_token");
-    if (token) {
-      // Añadir el token en la cabecera Authorization
+  async (config) => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const token = await getIdToken(currentUser);
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -20,3 +20,5 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+export default api;

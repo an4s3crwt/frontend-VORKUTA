@@ -1,24 +1,21 @@
-import React from 'react';
-import { api } from '../../src/api';  
+// src/pages/Logout.jsx
+import React, { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice'; // Acción para logout
 import { useNavigate } from 'react-router-dom';
 
-export default function Logout() {
-    const navigate = useNavigate();  // Usamos 'useNavigate' para redirigir después del logout
+const Logout = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
-    const handleLogout = async () => {
-        try {
-            // Hacemos la solicitud para invalidar el token en el backend
-            await api.post('/logout');
-            localStorage.removeItem('jwt_token'); // Eliminamos el token localmente
-            navigate('/login'); // Redirigimos al login
-        } catch (error) {
-            console.error("Error al cerrar sesión", error);
-        }
-    }
+    useEffect(() => {
+        // Despachar la acción logout para limpiar el estado
+        dispatch(logout());
+        // Redirigir al login después de cerrar sesión
+        navigate('/login');
+    }, [dispatch, navigate]);
 
-    return (
-        <div>
-            <button onClick={handleLogout}>Cerrar sesión</button>
-        </div>
-    );
-}
+    return <div>Logging out...</div>;
+};
+
+export default Logout;

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { api } from '../../src/api';  // Asegúrate de importar axios correctamente
+import  api  from '../../src/api';  
 
 export default function Profile() {
     const [user, setUser] = useState(null);

@@ -4,9 +4,11 @@ import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import './App.css';
-// Optional: Import for global state management if needed
-// import { Provider } from 'react-redux';
-// import store from './app/store';
+import { Provider } from 'react-redux';
+
+import { AuthProvider } from './context/AuthContext';
+import store from './redux/store'; // Importamos la store
+import { BrowserRouter } from 'react-router-dom';  // Importa BrowserRouter
 
 // Create root element
 const container = document.getElementById('root');
@@ -15,16 +17,14 @@ const root = createRoot(container);
 // Render the app
 root.render(
   <React.StrictMode>
-    {/* Wrap with providers if needed (e.g., Redux, Theme) */}
-    {/* <Provider store={store}> */}
-      <App />
-    {/* </Provider> */}
+    {/* Asegúrate de envolver la aplicación con BrowserRouter y AuthProvider */}
+    <BrowserRouter>
+      <Provider store={store}>
+      <AuthProvider>
+        <App />
+        </AuthProvider>
+      </Provider>
+
+    </BrowserRouter>
   </React.StrictMode>
 );
-
-// Optional: Performance monitoring
-// if (process.env.NODE_ENV === 'development') {
-//   import('./reportWebVitals').then(({ default: reportWebVitals }) => {
-//     reportWebVitals(console.log);
-//   });
-// }

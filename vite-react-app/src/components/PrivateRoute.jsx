@@ -1,15 +1,13 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';  // Asegúrate de tener este hook configurado
 
-const PrivateRoute = ({ element }) => {
-    const token = localStorage.getItem('jwt_token'); // Verificamos si el token existe
+export const PrivateRoute = ({ children }) => {
+    const { user } = useAuth();  // Ahora usamos el contexto de Firebase
 
-    if (!token) {
-        // Si no hay token, redirigimos al login
+    if (!user) {
         return <Navigate to="/login" />;
     }
 
-    return element; // Si hay token, mostramos el componente
+    return children;
 };
-
-export default PrivateRoute;

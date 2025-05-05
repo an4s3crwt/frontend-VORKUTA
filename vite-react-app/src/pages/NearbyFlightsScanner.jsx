@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from 'leaflet';
 import 'leaflet-rotatedmarker';
 import "leaflet/dist/leaflet.css";
-import { api } from './../api';
+import  api  from './../api';
 
 // Custom radar station icon (BOLD VERSION)
 const radarIcon = new L.Icon({

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate  } from 'react-router-dom';
-
-
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../api';
+import { useAuth } from '../context/AuthContext';  // Asegúrate de que esto exista
 import "./home.css";
-import "./../Navbar";
 
-const BACKEND_URL = "http://localhost:8000";
 
 export default function Home() {
+    const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
     const [aircraftResults, setAircraftResults] = useState({
         visible: false,
         loading: false,
@@ -22,18 +22,6 @@ export default function Home() {
         error: null,
         data: null
     });
-            
-
-
-    //Verificar si el Usuario está autenticado
-    useEffect(()=> {
-        const token = localStorage.getItem("jwt_token");
-
-        if(!token){
-            navigate("/login");
-        }
-    }, [navigate]);
-
 
     const handleAircraftSearch = async (e) => {
         const registration = e.target.value.trim();
@@ -46,14 +34,11 @@ export default function Home() {
         setAircraftResults(prev => ({ ...prev, loading: true, visible: false }));
 
         try {
-            const searchRes = await fetch(`${BACKEND_URL}/api/aircraft/search?registration=${registration}`);
-            if (!searchRes.ok) throw new Error("Aircraft not found");
-
-            const { icao24 } = await searchRes.json();
-            const aircraftRes = await fetch(`${BACKEND_URL}/api/aircraft/${icao24}`);
-            if (!aircraftRes.ok) throw new Error("Failed to fetch aircraft details");
-
-            const aircraftData = await aircraftRes.json();
+            const searchRes = await api.get(`/api/aircraft/search?registration=${registration}`);
+            const { icao24 } = searchRes.data;
+            
+            const aircraftRes = await api.get(`/api/aircraft/${icao24}`);
+            const aircraftData = aircraftRes.data;
 
             setAircraftResults({
                 visible: true,
@@ -68,7 +53,7 @@ export default function Home() {
             setAircraftResults({
                 visible: false,
                 loading: false,
-                error: err.message,
+                error: err.response?.data?.message || "Aircraft not found",
                 data: null
             });
         }
@@ -87,13 +72,11 @@ export default function Home() {
 
         try {
             const endpoint = codeLength === 3
-                ? `${BACKEND_URL}/api/airports/iata/${code}`
-                : `${BACKEND_URL}/api/airports/icao/${code}`;
+                ? `/api/airports/iata/${code}`
+                : `/api/airports/icao/${code}`;
 
-            const res = await fetch(endpoint);
-            if (!res.ok) throw new Error("Airport not found");
-
-            const airportData = await res.json();
+            const res = await api.get(endpoint);
+            const airportData = res.data;
 
             setAirportResults({
                 visible: true,
@@ -108,16 +91,24 @@ export default function Home() {
             setAirportResults({
                 visible: false,
                 loading: false,
-                error: err.message,
+                error: err.response?.data?.message || "Airport not found",
                 data: null
             });
         }
     };
 
+    const handleViewMap = () => {
+        if (!isAuthenticated) {
+            if (window.confirm("Debes iniciar sesión para ver el mapa en vivo. ¿Deseas ir a la página de inicio de sesión?")) {
+                navigate('/login');
+            }
+            return;
+        }
+        navigate('/map');
+    };
+
     return (
         <div className='minimal-container'>
-           
-
             {/* Hero Section Minimalista */}
             <section className='minimal-hero'>
                 <div className='hero-content'>
@@ -125,16 +116,20 @@ export default function Home() {
                     <p className='hero-subtitle'>
                         Track aircraft movements in real time
                     </p>
-                    <Link to='/map' className='hero-button'>
+                    <button onClick={handleViewMap} className='hero-button'>
                         View Live Map
-                    </Link>
+                    </button>
+                    {!isAuthenticated && (
+                        <p className="auth-notice">
+                            <Link to="/login">Inicia sesión</Link> para acceso completo
+                        </p>
+                    )}
                 </div>
             </section>
 
             {/* Search Section */}
             <section className='search-section'>
                 <h2 className='section-title'>Search Database</h2>
-
                 <div className='search-grid'>
                     {/* Aircraft Search */}
                     <div className='search-card'>
