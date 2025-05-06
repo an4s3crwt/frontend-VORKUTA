@@ -2,7 +2,9 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   user: null,       // Datos del usuario (nombre, email...)
-  firebaseToken: null, // ID token de Firebase
+  firebaseToken: null, // ID token de 
+  
+  
 };
 
 const authSlice = createSlice({

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import useCache from "../../hooks/useCache"; // Asumiendo que también extraes el hook
+import useCache from "../../hooks/useCache";
 import "./../../styles/InfoPopup.css";
 
 const CACHE_KEYS = {

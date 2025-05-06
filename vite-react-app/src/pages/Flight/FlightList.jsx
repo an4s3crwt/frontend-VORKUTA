@@ -80,9 +80,7 @@ function FlightList() {
 
                 const limitedFlights = {
                     time: response.data.time,
-                    states: response.data.states
-                        .filter(flight => flight[0] && flight[5] && flight[6] && flight[1])
-                        .slice(0, 2500)
+                    states: response.data.states,
                 };
 
                 setToCache(CACHE_KEYS.FLIGHT_DATA, limitedFlights);
@@ -118,7 +116,7 @@ function FlightList() {
         return () => clearInterval(interval);
     }, []);
 
-    // 🔧 Aquí se filtran los vuelos según el filtro y las preferencias
+    //  Aquí se filtran los vuelos según el filtro y las preferencias
     const filteredFlights = liveData?.states?.filter((flight) => {
         if (filter && !flight[1]?.toLowerCase().includes(filter.toLowerCase())) {
             return false;
