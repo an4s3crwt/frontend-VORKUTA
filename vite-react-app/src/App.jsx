@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile'; 
 import Logout from './pages/Logout';
+import CreateAdmin from './pages/Admin/CreateAdmin';
 import { PrivateRoute } from './components/PrivateRoute';
 
 export default function App() {
@@ -21,6 +22,8 @@ export default function App() {
             {/* Rutas públicas */}
             <Route path='/login' element={<Login />} />
             <Route path='/register' element={<Register />} />
+              {/* Ruta para crear el primer admin */}
+              <Route path='/create-admin' element={<CreateAdmin />} />
 
             {/* Ruta principal protegida */}
             <Route path="/" element={

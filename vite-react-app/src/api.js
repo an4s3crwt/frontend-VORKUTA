@@ -11,14 +11,17 @@ api.interceptors.request.use(
   async (config) => {
     const currentUser = auth.currentUser;
     if (currentUser) {
-      const token = await getIdToken(currentUser);
-      config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const token = await getIdToken(currentUser);
+        config.headers.Authorization = `Bearer ${token}`;
+      } catch (error) {
+        console.warn("No se pudo obtener el token de Firebase:", error);
+      }
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
+
 
 export default api;
