@@ -115,7 +115,19 @@ function InfoPopup({ icao, callsign, altitude, speed, bl, onSaveFlight }) {
             <div className="popup-actions">
                 <button
                     className="save-flight-btn"
-                    onClick={() => onSaveFlight(icao, callsign)}
+                    onClick={() => {
+                        const [departure_airport, arrival_airport] = route.includes("->")
+                            ? route.split("->").map(r => r.trim())
+                            : ["", ""];
+                    
+                        onSaveFlight(icao, callsign, {
+                            aircraft_type: aircraftData.ICAOTypeCode,
+                            airline_code: aircraftData.OperatorFlagCode,
+                            departure_airport,
+                            arrival_airport,
+                        });
+                    }}
+                    
                 >
                     💾 Guardar vuelo
                 </button>

@@ -41,11 +41,16 @@ function FlightList() {
 
             await api.post('/saved-flights', {
                 flight_icao: icao,
-                flight_data: { callsign }
+                flight_data: { callsign,
+                    ...extraData
+                }
+                
             });
+            toast.success("Vuelo guardado correctamente");
             setSavedFlights(prev => [...prev, { flight_icao: icao }]);
         } catch (error) {
             console.error('Error saving flight:', error);
+            toast.error("Error al guardar el vuelo");
         }
     };
 
