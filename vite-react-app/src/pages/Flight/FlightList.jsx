@@ -129,9 +129,12 @@ function FlightList() {
         }
         if (filters.minAltitude && flight[7] < filters.minAltitude) return false;
         if (filters.maxAltitude && flight[7] > filters.maxAltitude) return false;
+        if (flight[1] === "Unknown" || !flight[1]) return false;  // Filtra los vuelos con "Unknown" callsign
+        if (flight[2] === "Unknown" || !flight[2]) return false;  // Filtra los vuelos con "Unknown" en el segundo campo (si es necesario)
 
         return true;
     });
+
 
     return (
         <div className="flights-container">
@@ -145,11 +148,12 @@ function FlightList() {
             )}
 
             <button
-                className="preferences-btn"
+                className="btn btn-primary preferences-button"
                 onClick={() => setShowPreferences(true)}
             >
-                ⚙️ Preferencias
+                Preferencias
             </button>
+
             {showPreferences && (
                 <PreferencesPanel
                     onClose={() => setShowPreferences(false)}
@@ -196,19 +200,7 @@ function FlightList() {
                     })}
                 </MapContainer>
 
-                {showPreferences && (
-                    <PreferencesPanel
-                        theme={theme}
-                        filters={filters}
-                        onThemeChange={(newTheme) => {
-                            setTheme(newTheme);
-                        }}
-                        onFiltersChange={(newFilters) => {
-                            setFilters(newFilters);
-                        }}
-                        onClose={() => setShowPreferences(false)}
-                    />
-                )}
+               
             </div>
         </div>
     );

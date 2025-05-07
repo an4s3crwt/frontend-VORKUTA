@@ -1,0 +1,88 @@
+/* Efecto Glassmorphism para el modal */
+.modal-content {
+    backdrop-filter: blur(10px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(180%) !important;
+    background-color: rgba(0, 0, 0, 0.212) !important;  /* Fondo oscuro con transparencia */
+    border-radius: 15px !important; /* Bordes redondeados */
+    border: 1px solid rgba(255, 255, 255, 0) !important; /* Borde sutil */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important; /* Sombra ligera */
+    color: #eee !important;  /* Color de texto claro */
+    padding: 2rem !important;
+}
+
+/* Estilo de la cabecera del modal */
+.modal-header {
+    border-bottom: none !important;
+    padding-bottom: 1rem !important;
+    color: #ffffff !important;
+}
+
+.modal-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+}
+
+/* Botón de cierre */
+.btn-close {
+    color: #eee !important;
+    opacity: 0.8 !important;
+    background: none !important;
+    border: none !important;
+}
+
+.btn-close:hover {
+    opacity: 1 !important;
+}
+
+/* Fondo del modal */
+.modal {
+    background-color: rgba(2, 2, 2, 0.6) !important; /* Fondo oscuro y semi-transparente */
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 3rem !important;
+}
+
+/* Sección de filtros y tema */
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.form-label {
+    font-size: 1rem !important;
+    color: #cccccc !important;
+}
+
+.form-control, .form-select {
+    background-color: rgba(0, 0, 0, 0.021) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #eeeeee !important;
+    border-radius: 8px !important;
+    padding: 0.8rem !important;
+    transition: 0.3s all !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #5c6bc0 !important; /* Color de enfoque sutil */
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Botón de aplicar filtros */
+.btn-outline-primary {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: #4f5b62 !important;
+    color: #eee !important;
+    padding: 0.8rem 1.5rem !important;
+    border-radius: 8px !important;
+    transition: 0.3s all !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3a3f47 !important;
+    border-color: #5c6bc0 !important;
+}
+
+/* Sección de tema */
+.text-primary {
+    color: #4f5b62 !important; /* Color para los títulos */
+}

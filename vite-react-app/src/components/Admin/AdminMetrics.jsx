@@ -6,11 +6,24 @@ import {
     Tooltip,
     Legend,
     LineElement,
+    PointElement,  // Asegúrate de registrar el "point"
     CategoryScale,
     LinearScale,
 } from "chart.js";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api";
+import './../../styles/AdminMetrics.css'; // Importa el archivo CSS
+
+// Registrar componentes de Chart.js
+ChartJS.register(
+    Title,
+    Tooltip,
+    Legend,
+    LineElement,
+    PointElement,  // Registro explícito de "point"
+    CategoryScale,
+    LinearScale
+);
 
 function AdminMetrics() {
     const { isAuthenticated, user } = useAuth();
@@ -49,7 +62,7 @@ function AdminMetrics() {
         return <p>Please log in to view the admin metrics.</p>;
     }
 
-    // Data for the chart
+    // Datos para el gráfico
     const flightData = {
         labels: (metrics.top_flights ?? []).map(flight => flight.flight_icao),
         datasets: [
@@ -58,12 +71,13 @@ function AdminMetrics() {
                 data: (metrics.top_flights ?? []).map(flight => flight.total),
                 borderColor: "rgba(75,192,192,1)",
                 fill: false,
+                pointRadius: 5,  // Añadido para asegurarse de que los puntos se vean
             },
         ],
     };
 
     return (
-        <div>
+        <div className="container">
             <h2>Admin Metrics</h2>
             <p>Total Users: {metrics.total_users}</p>
             <p>Active Users in the Last Week: {metrics.active_users_last_week}</p>
@@ -88,7 +102,9 @@ function AdminMetrics() {
             </ul>
 
             <h3>Top Flights Chart</h3>
-          
+            <div className="chart-container">
+                <Line data={flightData} />
+            </div>
         </div>
     );
 }

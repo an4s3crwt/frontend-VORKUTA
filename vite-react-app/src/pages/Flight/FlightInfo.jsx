@@ -8,7 +8,7 @@ import 'leaflet.awesome-markers/dist/leaflet.awesome-markers.css';
 import 'leaflet.awesome-markers';
 import "./FlightInfo.css";
 import 'font-awesome/css/font-awesome.min.css';
-
+import api from '../../api';
 
 
 const airportIcon = new L.Icon({
@@ -112,9 +112,9 @@ function FlightInfo() {
             const username = "an4s3crwt";  // Replace with your OpenSky username
             const password = "Mentaybolita1";  // Replace with your OpenSky password
             const headers = new Headers();
-        
+
             headers.set('Authorization', 'Basic ' + btoa(username + ":" + password));
-        
+
             fetch(fetchurl2, { headers })
                 .then((response) => response.json())
                 .then((data) => {
@@ -127,7 +127,7 @@ function FlightInfo() {
                 })
                 .catch(() => setDefaultLiveData());
         };
-        
+
 
         const updateRouteInfo = (callsign) => {
             fetch(`https://hexdb.io/callsign-route-iata?callsign=${callsign}`)
@@ -202,6 +202,45 @@ function FlightInfo() {
     // Calculate heading icon (simplified)
     const heading = liveData?.states[0][10] || 0;
     const headingIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTE2IDBDMjQuODM2NiAwIDMyIDcuMTYzNDQgMzIgMTZDMzIgMjQuODM2NiAyNC44MzY2IDMyIDE2IDMyQzcuMTYzNDQgMzIgMCAyNC44MzY2IDAgMTZDMCA3LjE2MzQ0IDcuMTYzNDQgMCAxNiAwWiIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0xNiA0TDE2IDI4TTE2IDRMMjAgOE0xNiA0TDEyIDgiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+`;
+
+ 
+
+    const [viewedFlights, setViewedFlights] = useState(new Set());
+
+    useEffect(() => {
+        if (!liveData || !origin || !destination) return;
+
+        const callsign = liveData.states[0][1];
+        if (callsign === "No Callsign") return;
+
+        // Check if the flight has already been viewed (snapshot)
+        if (viewedFlights.has(callsign)) return;
+
+        const flightData = {
+            callsign,
+            flight_number: callsign?.replace(/[^\d]/g, '') || null,
+            from: origin,
+            to: destination,
+        };
+
+        // Add the callsign to the viewed flights set (snapshot)
+        setViewedFlights(prev => new Set(prev.add(callsign)));
+
+        // Define the async function and call it immediately
+        async function handleFlightView(flightData) {
+            try {
+                const res = await api.post('/flight/view', flightData);
+                console.log("Flight view recorded", res.data);
+            } catch (err) {
+                console.error("Failed to store flight view:", err);
+            }
+        }
+
+        // Call handleFlightView immediately (snapshot)
+        handleFlightView(flightData);
+
+    }, [liveData, origin, destination, viewedFlights]);  // Include viewedFlights in the dependencies
+
 
     return (
         <div className="flight-info-container">

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { debounce } from "lodash";
 import { useUserPreferences } from "../../src/hooks/useUserPreferences";
+import '../styles/card.css'; 
 
-
-// Componente de Filtros
+// Sección de Filtros con Bootstrap
 const FiltersSection = ({ filters, onFiltersChange }) => {
     const [localFilters, setLocalFilters] = useState(filters);
 
@@ -19,38 +19,45 @@ const FiltersSection = ({ filters, onFiltersChange }) => {
     }, 500);
 
     return (
-        <div className="preferences-section">
-            <h4>Filtros</h4>
-            <div className="filter-group">
-                <label>Altitud mínima (ft)</label>
+        <div className="mb-4">
+            <h5 className="text-primary mb-3">Filtros</h5>
+
+            <div className="mb-3">
+                <label className="form-label">Altitud mínima (ft)</label>
                 <input
                     type="number"
+                    className="form-control"
                     value={localFilters.minAltitude}
                     onChange={(e) => handleFilterChange("minAltitude", parseInt(e.target.value))}
                 />
             </div>
 
-            <div className="filter-group">
-                <label>Altitud máxima (ft)</label>
+            <div className="mb-3">
+                <label className="form-label">Altitud máxima (ft)</label>
                 <input
                     type="number"
+                    className="form-control"
                     value={localFilters.maxAltitude}
                     onChange={(e) => handleFilterChange("maxAltitude", parseInt(e.target.value))}
                 />
             </div>
 
-            <button className="apply-btn" onClick={applyFiltersWithDebounce}>
+            <button className="btn btn-outline-primary" onClick={applyFiltersWithDebounce}>
                 Aplicar filtros
             </button>
         </div>
     );
 };
 
-// Componente del Tema
+// Sección de Tema con Bootstrap
 const ThemeSection = ({ theme, onThemeChange }) => (
-    <div className="preferences-section">
-        <h4>Tema del mapa</h4>
-        <select value={theme} onChange={(e) => onThemeChange(e.target.value)}>
+    <div className="mb-4">
+        <h5 className="text-primary mb-3">Tema del mapa</h5>
+        <select
+            className="form-select"
+            value={theme}
+            onChange={(e) => onThemeChange(e.target.value)}
+        >
             <option value="light">Claro</option>
             <option value="dark">Oscuro</option>
             <option value="satellite">Satélite</option>
@@ -58,6 +65,7 @@ const ThemeSection = ({ theme, onThemeChange }) => (
     </div>
 );
 
+// Panel completo con Bootstrap
 export default function PreferencesPanel({ onClose }) {
     const { preferences, savePreferences } = useUserPreferences();
 
@@ -71,14 +79,19 @@ export default function PreferencesPanel({ onClose }) {
     };
 
     return (
-        <div className="preferences-panel">
-            <div className="preferences-header">
-                <h3>Preferencias</h3>
-                <button onClick={onClose}>×</button>
+        <div className="modal d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content shadow-lg">
+                    <div className="modal-header">
+                        <h4 className="modal-title">Preferencias</h4>
+                        <button type="button" className="btn-close" onClick={onClose}></button>
+                    </div>
+                    <div className="modal-body">
+                        <ThemeSection theme={preferences.theme} onThemeChange={handleThemeChange} />
+                        <FiltersSection filters={preferences.filters} onFiltersChange={handleFiltersChange} />
+                    </div>
+                </div>
             </div>
-
-            <ThemeSection theme={preferences.theme} onThemeChange={handleThemeChange} />
-            <FiltersSection filters={preferences.filters} onFiltersChange={handleFiltersChange} />
         </div>
     );
 }
