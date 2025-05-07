@@ -53,10 +53,11 @@ export default function App() {
 
                 {/* Rutas para administradores */}
                 <Route path="/admin/dashboard" element={
-                    <PrivateRoute adminOnly={true}> {/* Protege el dashboard para administradores */}
+                    <PrivateRoute adminOnly={true}>
                         <AdminDashboard />
                     </PrivateRoute>
                 } />
+
 
                 {/* Ruta para páginas no encontradas */}
                 <Route path="*" element={<NotFound />} />
