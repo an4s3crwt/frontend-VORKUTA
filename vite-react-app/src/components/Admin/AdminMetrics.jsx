@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";  // Para obtener el estado de autenticación
-import api from "../../api";  // Para hacer las peticiones API
+import { Line } from "react-chartjs-2";
+import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale } from "chart.js";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../api";
+
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale);
 
 function AdminMetrics() {
     const { isAuthenticated, user } = useAuth();
@@ -16,8 +20,8 @@ function AdminMetrics() {
         if (isAuthenticated) {
             const fetchMetrics = async () => {
                 try {
-                    const response = await api.get("/admin/metrics");  // Llamada a la API
-                    setMetrics(response.data);  // Guardamos los datos obtenidos
+                    const response = await api.get("/admin/metrics");
+                    setMetrics(response.data);
                 } catch (error) {
                     console.error("Error fetching metrics:", error);
                 }
@@ -25,11 +29,24 @@ function AdminMetrics() {
 
             fetchMetrics();
         }
-    }, [isAuthenticated]);  // Solo hacer la petición si está autenticado
+    }, [isAuthenticated]);
 
     if (!isAuthenticated) {
         return <p>Please log in to view the admin metrics.</p>;
     }
+
+    // Data for the chart
+    const flightData = {
+        labels: metrics.top_flights.map(flight => flight.flight_icao),
+        datasets: [
+            {
+                label: "Top Flights",
+                data: metrics.top_flights.map(flight => flight.total),
+                borderColor: "rgba(75,192,192,1)",
+                fill: false,
+            },
+        ],
+    };
 
     return (
         <div>
@@ -48,9 +65,12 @@ function AdminMetrics() {
             <h3>Top 5 Airports</h3>
             <ul>
                 {metrics.top_airports.map((airport, index) => (
-                    <li key={index}>{airport.airport} - {airport.total}</li>
+                    <li key={index}>{airport.from_airport_code} - {airport.total}</li>
                 ))}
             </ul>
+
+            <h3>Top Flights Chart</h3>
+            <Line data={flightData} />
         </div>
     );
 }

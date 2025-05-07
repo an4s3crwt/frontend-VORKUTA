@@ -11,10 +11,11 @@ import NotFound from "./pages/NotFound";
 import NearbyFlightsScanner from './pages/NearbyFlightsScanner';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Profile from './pages/Profile'; 
+import Profile from './pages/Profile';
 import Logout from './pages/Logout';
 import CreateAdmin from './pages/Admin/CreateAdmin';
-import { PrivateRoute } from './components/PrivateRoute';
+import AdminDashboard from './pages/Admin/AdminDashboard';  // Página para administradores
+import { PrivateRoute } from './../src/components/PrivateRoute';
 
 export default function App() {
     return (
@@ -22,12 +23,12 @@ export default function App() {
             {/* Rutas públicas */}
             <Route path='/login' element={<Login />} />
             <Route path='/register' element={<Register />} />
-              {/* Ruta para crear el primer admin */}
-              <Route path='/create-admin' element={<CreateAdmin />} />
+            {/* Ruta para crear el primer admin */}
+            <Route path='/create-admin' element={<CreateAdmin />} />
 
             {/* Ruta principal protegida */}
             <Route path="/" element={
-                <PrivateRoute>
+                <PrivateRoute> {/* Protege todo el layout para usuarios autenticados */}
                     <Layout />
                 </PrivateRoute>
             }>
@@ -43,11 +44,19 @@ export default function App() {
                 {/* Ruta del mapa */}
                 <Route path="map" element={<FlightList />} />
 
+                {/* Ruta de vuelos cercanos */}
                 <Route path='/scanner' element={<NearbyFlightsScanner />} />
 
-                {/* Rutas de usuario */}
+                {/* Rutas de usuario (solo usuarios autenticados) */}
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/logout" element={<Logout />} />
+
+                {/* Rutas para administradores */}
+                <Route path="/admin/dashboard" element={
+                    <PrivateRoute adminOnly={true}> {/* Protege el dashboard para administradores */}
+                        <AdminDashboard />
+                    </PrivateRoute>
+                } />
 
                 {/* Ruta para páginas no encontradas */}
                 <Route path="*" element={<NotFound />} />

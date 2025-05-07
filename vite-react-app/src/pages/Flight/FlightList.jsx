@@ -3,15 +3,14 @@ import "leaflet/dist/leaflet.css";
 import React, { useEffect, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { Link, useParams } from "react-router-dom";
-import api from './../../api';
-import { debounce } from 'lodash';
-import "./FlightsList.css";
+import PreferencesPanel from "../../components/PreferencesPanel";
+import { CACHE_KEYS, DEFAULT_FILTERS, MAP_THEMES } from "../../constants/map";
 import { useAuth } from '../../context/AuthContext';
 import useCache from "../../hooks/useCache";
-import { CACHE_KEYS, MAP_THEMES, DEFAULT_FILTERS, DEFAULT_AIRCRAFT_DATA } from "../../constants/map";
-import InfoPopup from "./InfoPopup";
-import PreferencesPanel from "../../components/PreferencesPanel";
 import { useUserPreferences } from "../../hooks/useUserPreferences";
+import api from './../../api';
+import "./FlightsList.css";
+import InfoPopup from "./InfoPopup";
 
 
 function FlightList() {
@@ -33,6 +32,9 @@ function FlightList() {
 
     // Guardar un vuelo
     const handleSaveFlight = async (icao, callsign) => {
+        // Define extraData as needed
+        const extraData = {}; // Update with the correct extra flight information
+
         try {
             if (savedFlights.some(f => f.flight_icao === icao)) {
                 alert('Este vuelo ya está guardado');
@@ -41,10 +43,10 @@ function FlightList() {
 
             await api.post('/saved-flights', {
                 flight_icao: icao,
-                flight_data: { callsign,
+                flight_data: {
+                    callsign,
                     ...extraData
                 }
-                
             });
             toast.success("Vuelo guardado correctamente");
             setSavedFlights(prev => [...prev, { flight_icao: icao }]);
@@ -78,14 +80,13 @@ function FlightList() {
                 }
 
                 const response = await api.get('/opensky/states');
-
-                if (!response.data.states || !response.data.states.some(f => f[5] !== null && f[6] !== null)) {
-                    throw new Error('No valid flight data received');
-                }
+                // Solo tomamos los primeros 200 con posición válida
+                const validStates = response.data.states?.filter(f => f[5] !== null && f[6] !== null) || [];
+                const limitedStates = validStates.slice(0, 200);
 
                 const limitedFlights = {
                     time: response.data.time,
-                    states: response.data.states,
+                    states: limitedStates,
                 };
 
                 setToCache(CACHE_KEYS.FLIGHT_DATA, limitedFlights);
