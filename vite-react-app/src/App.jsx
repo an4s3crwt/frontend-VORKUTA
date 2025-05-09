@@ -16,7 +16,7 @@ import Logout from './pages/Logout';
 import CreateAdmin from './pages/Admin/CreateAdmin';
 import AdminDashboard from './pages/Admin/AdminDashboard';  // Página para administradores
 import { PrivateRoute } from './../src/components/PrivateRoute';
-
+import AdminLogs from './pages/Admin/AdminLogs';
 export default function App() {
     return (
         <Routes>
@@ -55,6 +55,11 @@ export default function App() {
                 <Route path="/admin/dashboard" element={
                     <PrivateRoute adminOnly={true}>
                         <AdminDashboard />
+                    </PrivateRoute>
+                } />
+                   <Route path="/admin/dasboard-logs" element={
+                    <PrivateRoute adminOnly={true}>
+                        <AdminLogs />
                     </PrivateRoute>
                 } />
 
