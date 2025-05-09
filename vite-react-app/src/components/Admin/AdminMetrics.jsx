@@ -8,6 +8,7 @@ import {
   BarElement,
   CategoryScale,
   LinearScale,
+  Filler
 } from "chart.js";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api";
@@ -20,11 +21,12 @@ ChartJS.register(
   Legend,
   BarElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
+  Filler 
 );
 
 function AdminMetrics() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [metrics, setMetrics] = useState({
     users: {
       total: 0,
@@ -41,42 +43,45 @@ function AdminMetrics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchAdminData();
-    }
-  }, [isAuthenticated]);
-  const fetchAdminData = async () => {
-    try {
-      setLoading(true);
-      const [metricsRes, usersRes] = await Promise.all([
-        api.get("/admin/metrics"),
-        api.get("/users")
-      ]);
+ useEffect(() => {
+  console.log("Auth status:", isAuthenticated);
+  console.log("Is admin:", isAdmin);
   
-      console.log("Users Data:", usersRes.data);  // Verifica los datos de usuarios
-      console.log("Metrics Data:", metricsRes.data);  // Verifica las métricas de vuelos
-  
-      setMetrics({
-        users: {
-          total: usersRes.data.total || 0,
-          active: usersRes.data.active || 0,
-          admins: usersRes.data.admins || 0,
-          banned: usersRes.data.banned || 0
-        },
-        flights: metricsRes.data.flights || {
-          total_views: 0,
-          by_user: [],
-          top_routes: []
-        }
-      });
-      setLoading(false);
-    } catch (err) {
-      setError("Failed to load admin data");
-      setLoading(false);
-      console.error("Admin data error:", err);
-    }
-  };
+  if (isAuthenticated && isAdmin) {
+    fetchAdminData();
+  }
+}, [isAuthenticated, isAdmin]);
+
+ const fetchAdminData = async () => {
+  try {
+    setLoading(true);
+    const [metricsRes, usersRes] = await Promise.all([
+      api.get("/admin/metrics"),
+      api.get("/users")
+    ]);
+
+    console.log("Metrics Data:", metricsRes); // Verifica si recibes los datos
+    setMetrics({
+      users: {
+        total: usersRes.data.total || 0,
+        active: usersRes.data.active || 0,
+        admins: usersRes.data.admins || 0,
+        banned: usersRes.data.banned || 0
+      },
+      flights: metricsRes.data.flights || {
+        total_views: 0,
+        by_user: [],
+        top_routes: []
+      }
+    });
+    setLoading(false);
+  } catch (err) {
+    setError("Failed to load admin data");
+    setLoading(false);
+    console.error("Admin data error:", err);
+  }
+};
+
   
 
   if (!isAuthenticated) {
@@ -92,31 +97,34 @@ function AdminMetrics() {
   }
 
   // Datos para gráficos
-  const userActivityData = {
-    labels: ['Total', 'Active', 'Admins', 'Banned'],
-    datasets: [{
-      label: 'Users',
-      data: [
-        metrics.users.total,
-        metrics.users.active,
-        metrics.users.admins,
-        metrics.users.banned
-      ],
-      backgroundColor: [
-        'rgba(54, 162, 235, 0.5)',
-        'rgba(75, 192, 192, 0.5)',
-        'rgba(255, 206, 86, 0.5)',
-        'rgba(255, 99, 132, 0.5)'
-      ],
-      borderColor: [
-        'rgba(54, 162, 235, 1)',
-        'rgba(75, 192, 192, 1)',
-        'rgba(255, 206, 86, 1)',
-        'rgba(255, 99, 132, 1)'
-      ],
-      borderWidth: 1
-    }]
-  };
+ const userActivityData = {
+  labels: ['Total', 'Active', 'Admins', 'Banned'],
+  datasets: [{
+    label: 'Users',
+    data: [
+      metrics.users.total,
+      metrics.users.active,
+      metrics.users.admins,
+      metrics.users.banned
+    ],
+    backgroundColor: [
+      'rgba(54, 162, 235, 0.5)',
+      'rgba(75, 192, 192, 0.5)',
+      'rgba(255, 206, 86, 0.5)',
+      'rgba(255, 99, 132, 0.5)'
+    ],
+    borderColor: [
+      'rgba(54, 162, 235, 1)',
+      'rgba(75, 192, 192, 1)',
+      'rgba(255, 206, 86, 1)',
+      'rgba(255, 99, 132, 1)'
+    ],
+    borderWidth: 1,
+    // Eliminar la opción fill si no es necesario
+    fill: false
+  }]
+};
+
 
   const flightRoutesData = {
     labels: metrics.flights.top_routes.map(route => 

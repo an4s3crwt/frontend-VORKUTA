@@ -76,6 +76,6 @@ function FlightViewsByUser() {
       </table>
     </div>
   );
-}  
+}
 
 export default FlightViewsByUser;

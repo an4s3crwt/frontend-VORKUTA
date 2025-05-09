@@ -14,59 +14,91 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Logout from './pages/Logout';
 import CreateAdmin from './pages/Admin/CreateAdmin';
-import AdminDashboard from './pages/Admin/AdminDashboard';  // Página para administradores
+import AdminDashboard from './pages/Admin/AdminDashboard';
 import { PrivateRoute } from './../src/components/PrivateRoute';
 import AdminLogs from './pages/Admin/AdminLogs';
+import AccessDenied from './pages/AccessDenied';
+import ErrorBoundary from './components/ErrorBoundary';
+
 export default function App() {
     return (
-        <Routes>
-            {/* Rutas públicas */}
-            <Route path='/login' element={<Login />} />
-            <Route path='/register' element={<Register />} />
-            {/* Ruta para crear el primer admin */}
-            <Route path='/create-admin' element={<CreateAdmin />} />
+        <ErrorBoundary>
+            <Routes>
+                {/* Public routes */}
+                <Route path='/access-denied' element={<AccessDenied />} />
+                <Route path='/login' element={<Login />} />
+                <Route path='/register' element={<Register />} />
+                <Route path='/create-admin' element={<CreateAdmin />} />
 
-            {/* Ruta principal protegida */}
-            <Route path="/" element={
-                <PrivateRoute> {/* Protege todo el layout para usuarios autenticados */}
-                    <Layout />
-                </PrivateRoute>
-            }>
-                <Route index element={<Home />} />
-
-                {/* Rutas de aeropuertos */}
-                <Route path="airport/:icao" element={<Airport />} />
-
-                {/* Rutas de vuelos */}
-                <Route path="flights" element={<FlightList />} />
-                <Route path="flight-info/:icao" element={<FlightInfo />} />
-
-                {/* Ruta del mapa */}
-                <Route path="map" element={<FlightList />} />
-
-                {/* Ruta de vuelos cercanos */}
-                <Route path='/scanner' element={<NearbyFlightsScanner />} />
-
-                {/* Rutas de usuario (solo usuarios autenticados) */}
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/logout" element={<Logout />} />
-
-                {/* Rutas para administradores */}
-                <Route path="/admin/dashboard" element={
-                    <PrivateRoute adminOnly={true}>
-                        <AdminDashboard />
+                {/* Main protected route */}
+                <Route path="/" element={
+                    <PrivateRoute>
+                        <Layout />
                     </PrivateRoute>
-                } />
-                   <Route path="/admin/dasboard-logs" element={
-                    <PrivateRoute adminOnly={true}>
-                        <AdminLogs />
-                    </PrivateRoute>
-                } />
+                }>
+                    <Route index element={<Home />} />
 
+                    {/* Airport routes */}
+                    <Route path="airport/:icao" element={
+                        <ErrorBoundary>
+                            <Airport />
+                        </ErrorBoundary>
+                    } />
 
-                {/* Ruta para páginas no encontradas */}
-                <Route path="*" element={<NotFound />} />
-            </Route>
-        </Routes>
+                    {/* Flight routes */}
+                    <Route path="flights" element={
+                        <ErrorBoundary>
+                            <FlightList />
+                        </ErrorBoundary>
+                    } />
+                    <Route path="flight-info/:icao" element={
+                        <ErrorBoundary>
+                            <FlightInfo />
+                        </ErrorBoundary>
+                    } />
+
+                    {/* Map route */}
+                    <Route path="map" element={
+                        <ErrorBoundary>
+                            <FlightList />
+                        </ErrorBoundary>
+                    } />
+
+                    {/* Nearby flights scanner */}
+                    <Route path='/scanner' element={
+                        <ErrorBoundary>
+                            <NearbyFlightsScanner />
+                        </ErrorBoundary>
+                    } />
+
+                    {/* User routes */}
+                    <Route path="/profile" element={
+                        <ErrorBoundary>
+                            <Profile />
+                        </ErrorBoundary>
+                    } />
+                    <Route path="/logout" element={<Logout />} />
+
+                    {/* Admin routes */}
+                    <Route path="/admin/dashboard" element={
+                        <PrivateRoute adminOnly={true}>
+                            <ErrorBoundary>
+                                <AdminDashboard />
+                            </ErrorBoundary>
+                        </PrivateRoute>
+                    } />
+                    <Route path="/admin/dashboard-logs" element={
+                        <PrivateRoute adminOnly={true}>
+                            <ErrorBoundary>
+                                <AdminLogs />
+                            </ErrorBoundary>
+                        </PrivateRoute>
+                    } />
+
+                    {/* 404 route */}
+                    <Route path="*" element={<NotFound />} />
+                </Route>
+            </Routes>
+        </ErrorBoundary>
     );
 }
