@@ -13,6 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import api from "../../api";
 import './../../styles/AdminMetrics.css';
 
+
 ChartJS.register(
   Title,
   Tooltip,
