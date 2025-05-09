@@ -9,7 +9,7 @@ import 'leaflet.awesome-markers';
 import "./FlightInfo.css";
 import 'font-awesome/css/font-awesome.min.css';
 import api from '../../api';
-
+import { useAuth } from '../../context/AuthContext';
 
 const airportIcon = new L.Icon({
     iconUrl: '/a1.png',
@@ -54,6 +54,7 @@ function StatusAlert({ onGround, callSign }) {
 }
 
 function FlightInfo() {
+    const { user, isAuthenticated } = useAuth();
     let { icao } = useParams();
 
     const [aircraftData, setAircraftData] = useState({
@@ -137,23 +138,32 @@ function FlightInfo() {
                     setOrigin(org);
                     setDestination(dst);
 
-                    // Fetch origin airport data
-                    fetch(`https://hexdb.io/api/v1/airport/iata/${org}`)
-                        .then((r) => r.json())
-                        .then(setOriginData)
-                        .catch(() => setDefaultOriginData());
+                    if (org !== "Unknown") {
+                        // Fetch origin airport data if valid
+                        fetch(`https://hexdb.io/api/v1/airport/iata/${org}`)
+                            .then((r) => r.json())
+                            .then(setOriginData)
+                            .catch(() => setDefaultOriginData());
+                    } else {
+                        setDefaultOriginData();
+                    }
 
-                    // Fetch destination airport data
-                    fetch(`https://hexdb.io/api/v1/airport/iata/${dst}`)
-                        .then((r) => r.json())
-                        .then(setDestinationData)
-                        .catch(() => setDefaultDestinationData());
+                    if (dst !== "Unknown") {
+                        // Fetch destination airport data if valid
+                        fetch(`https://hexdb.io/api/v1/airport/iata/${dst}`)
+                            .then((r) => r.json())
+                            .then(setDestinationData)
+                            .catch(() => setDefaultDestinationData());
+                    } else {
+                        setDefaultDestinationData();
+                    }
                 })
                 .catch(() => {
                     setOrigin("Unknown");
                     setDestination("Unknown");
                 });
         };
+
 
         const setDefaultLiveData = () => {
             setLiveData({
@@ -203,44 +213,38 @@ function FlightInfo() {
     const heading = liveData?.states[0][10] || 0;
     const headingIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTE2IDBDMjQuODM2NiAwIDMyIDcuMTYzNDQgMzIgMTZDMzIgMjQuODM2NiAyNC44MzY2IDMyIDE2IDMyQzcuMTYzNDQgMzIgMCAyNC44MzY2IDAgMTZDMCA3LjE2MzQ0IDcuMTYzNDQgMCAxNiAwWiIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0xNiA0TDE2IDI4TTE2IDRMMjAgOE0xNiA0TDEyIDgiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+`;
 
- 
+
 
     const [viewedFlights, setViewedFlights] = useState(new Set());
 
     useEffect(() => {
         if (!liveData || !origin || !destination) return;
-
+    
         const callsign = liveData.states[0][1];
         if (callsign === "No Callsign") return;
-
-        // Check if the flight has already been viewed (snapshot)
-        if (viewedFlights.has(callsign)) return;
-
+    
+        // Only proceed if we have valid origin/destination (not "Unknown")
+        if (origin === "Unknown" || destination === "Unknown") return;
+    
+        // Create a unique key for this flight view
+        const flightKey = `${callsign}-${origin}-${destination}`;
+        
+        if (viewedFlights.has(flightKey)) return;
+    
         const flightData = {
             callsign,
-            flight_number: callsign?.replace(/[^\d]/g, '') || null,
-            from: origin,
-            to: destination,
+            flight_number: callsign.replace(/[^\d]/g, '') || null,
+            from_airport_code: origin,
+            to_airport_code: destination,
+            firebase_uid: user?.uid || null,
         };
-
-        // Add the callsign to the viewed flights set (snapshot)
-        setViewedFlights(prev => new Set(prev.add(callsign)));
-
-        // Define the async function and call it immediately
-        async function handleFlightView(flightData) {
-            try {
-                const res = await api.post('/flight/view', flightData);
-                console.log("Flight view recorded", res.data);
-            } catch (err) {
-                console.error("Failed to store flight view:", err);
-            }
-        }
-
-        // Call handleFlightView immediately (snapshot)
-        handleFlightView(flightData);
-
-    }, [liveData, origin, destination, viewedFlights]);  // Include viewedFlights in the dependencies
-
+    
+        setViewedFlights(prev => new Set(prev.add(flightKey)));
+    
+        api.post('/flight/view', flightData)
+            .then(res => console.log("Flight view recorded", res.data))
+            .catch(err => console.error("Failed to store flight view:", err));
+    }, [liveData, origin, destination, viewedFlights, isAuthenticated, user]);
 
     return (
         <div className="flight-info-container">
