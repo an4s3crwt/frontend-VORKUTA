@@ -1,56 +1,50 @@
 import React, { useState } from "react";
-import { debounce } from "lodash";
 import { useUserPreferences } from "../../src/hooks/useUserPreferences";
-import '../styles/card.css'; 
+import { DEFAULT_FILTERS, MAP_THEMES } from "../constants/map";
+import PropTypes from 'prop-types';
+import '../styles/card.css';
 
-// Sección de Filtros con Bootstrap
-const FiltersSection = ({ filters, onFiltersChange }) => {
-    const [localFilters, setLocalFilters] = useState(filters);
+const FiltersSection = ({ filters, onFiltersChange, onClose }) => {
+    const [localFilters, setLocalFilters] = useState(filters || DEFAULT_FILTERS);
 
     const handleFilterChange = (key, value) => {
-        setLocalFilters((prev) => ({
-            ...prev,
-            [key]: value,
-        }));
+        setLocalFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    const applyFiltersWithDebounce = debounce(() => {
+    const handleApply = () => {
         onFiltersChange(localFilters);
-    }, 500);
+        onClose();
+    };
 
     return (
         <div className="mb-4">
             <h5 className="text-primary mb-3">Filtros</h5>
-
             <div className="mb-3">
-                <label className="form-label">Altitud mínima (ft)</label>
+                <label className="form-label">País de origen</label>
                 <input
-                    type="number"
+                    type="text"
                     className="form-control"
-                    value={localFilters.minAltitude}
-                    onChange={(e) => handleFilterChange("minAltitude", parseInt(e.target.value))}
+                    value={localFilters.originCountry || ''}
+                    onChange={(e) => handleFilterChange("originCountry", e.target.value)}
                 />
             </div>
-
             <div className="mb-3">
-                <label className="form-label">Altitud máxima (ft)</label>
+                <label className="form-label">País de destino</label>
                 <input
-                    type="number"
+                    type="text"
                     className="form-control"
-                    value={localFilters.maxAltitude}
-                    onChange={(e) => handleFilterChange("maxAltitude", parseInt(e.target.value))}
+                    value={localFilters.destCountry || ''}
+                    onChange={(e) => handleFilterChange("destCountry", e.target.value)}
                 />
             </div>
-
-            <button className="btn btn-outline-primary" onClick={applyFiltersWithDebounce}>
-                Aplicar filtros
+            <button className="btn btn-primary mt-2" onClick={handleApply}>
+                Aplicar Filtros
             </button>
         </div>
     );
 };
 
-// Sección de Tema con Bootstrap
-const ThemeSection = ({ theme, onThemeChange }) => (
+const ThemeSection = ({ theme, onThemeChange, onApplyTheme }) => (
     <div className="mb-4">
         <h5 className="text-primary mb-3">Tema del mapa</h5>
         <select
@@ -58,40 +52,88 @@ const ThemeSection = ({ theme, onThemeChange }) => (
             value={theme}
             onChange={(e) => onThemeChange(e.target.value)}
         >
-            <option value="light">Claro</option>
-            <option value="dark">Oscuro</option>
-            <option value="satellite">Satélite</option>
+            {Object.entries(MAP_THEMES).map(([key, value]) => (
+                <option key={key} value={value}>
+                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                </option>
+            ))}
         </select>
+        <button className="btn btn-primary mt-2" onClick={onApplyTheme}>
+            Aplicar Tema
+        </button>
     </div>
 );
 
-// Panel completo con Bootstrap
-export default function PreferencesPanel({ onClose }) {
+export default function PreferencesPanel({ onClose, onThemeApplied }) {
     const { preferences, savePreferences } = useUserPreferences();
+    const [currentTheme, setCurrentTheme] = useState(preferences?.theme || MAP_THEMES.light);
 
     const handleThemeChange = (newTheme) => {
-        savePreferences({ theme: newTheme });
+        setCurrentTheme(newTheme);
     };
+const handleApplyTheme = () => {
+    // Find the theme KEY that matches the URL
+    const themeKey = Object.keys(MAP_THEMES).find(
+        key => MAP_THEMES[key] === currentTheme
+    );
+    
+    if (themeKey) {
+        savePreferences({ theme: themeKey }); // Save the KEY, not the URL
+        onThemeApplied(themeKey);
+    } else {
+        console.error('Invalid theme URL selected:', currentTheme);
+    }
+};
 
     const handleFiltersChange = (newFilters) => {
         savePreferences({ filters: newFilters });
-        onClose();
     };
 
     return (
-        <div className="modal d-block" tabIndex="-1">
-            <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content shadow-lg">
-                    <div className="modal-header">
-                        <h4 className="modal-title">Preferencias</h4>
-                        <button type="button" className="btn-close" onClick={onClose}></button>
-                    </div>
-                    <div className="modal-body">
-                        <ThemeSection theme={preferences.theme} onThemeChange={handleThemeChange} />
-                        <FiltersSection filters={preferences.filters} onFiltersChange={handleFiltersChange} />
+        <>
+            <div className="modal-backdrop fade show" onClick={onClose}></div>
+            <div className="modal d-block" tabIndex="-1">
+                <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-content shadow-lg">
+                        <div className="modal-header">
+                            <h4 className="modal-title">Preferencias</h4>
+                            <button type="button" className="btn-close" onClick={onClose} aria-label="Cerrar"></button>
+                        </div>
+                        <div className="modal-body">
+                            <ThemeSection 
+                                theme={currentTheme}
+                                onThemeChange={handleThemeChange}
+                                onApplyTheme={handleApplyTheme}
+                            />
+                            <FiltersSection 
+                                filters={preferences?.filters || DEFAULT_FILTERS} 
+                                onFiltersChange={handleFiltersChange}
+                                onClose={onClose}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
+
+FiltersSection.propTypes = {
+    filters: PropTypes.shape({
+        originCountry: PropTypes.string,
+        destCountry: PropTypes.string,
+    }),
+    onFiltersChange: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+};
+
+ThemeSection.propTypes = {
+    theme: PropTypes.string.isRequired,
+    onThemeChange: PropTypes.func.isRequired,
+    onApplyTheme: PropTypes.func.isRequired,
+};
+
+PreferencesPanel.propTypes = {
+    onClose: PropTypes.func.isRequired,
+    onThemeApplied: PropTypes.func.isRequired,
+};

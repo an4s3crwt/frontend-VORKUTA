@@ -18,16 +18,31 @@ function FlightList() {
     const { getFromCache, setToCache } = useCache();
     const { infoSlug } = useParams();
     const [liveData, setLiveData] = useState(null);
-    const [filter, setFilter] = useState("");
+
     const [backLink, setBackLink] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Estados de preferencias de user
-    const [theme, setTheme] = useState('light');
-    const [filters, setFilters] = useState(DEFAULT_FILTERS);
-    const [savedFlights, setSavedFlights] = useState([]);
     const { preferences } = useUserPreferences();
+
+    const [theme, setTheme] = useState(() => {
+        // Default to 'light' if preferences not loaded
+        if (!preferences || !preferences.theme) return 'light';
+
+        // Ensure we have a valid theme key
+        return MAP_THEMES[preferences.theme] ? preferences.theme : 'light';
+    });
+
+    const [filter, setFilter] = useState("");
+
+
+
+    const [filters, setFilters] = useState(() => {
+        if (!preferences || !preferences.filters) return DEFAULT_FILTERS;
+        return preferences.filters;
+    });
+    const [savedFlights, setSavedFlights] = useState([]);
+
     const [showPreferences, setShowPreferences] = useState(false);
 
     // Guardar un vuelo
@@ -157,6 +172,9 @@ function FlightList() {
             {showPreferences && (
                 <PreferencesPanel
                     onClose={() => setShowPreferences(false)}
+                    onThemeApplied={(newTheme) => {
+                        setTheme(newTheme); // Actualiza el estado del tema
+                    }}
                 />
             )}
 
@@ -169,7 +187,7 @@ function FlightList() {
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url={MAP_THEMES[theme]}
+                        url={MAP_THEMES[theme] || MAP_THEMES.light}
                     />
                     {filteredFlights?.map((stat) => {
                         if (!stat[6]) return null;
@@ -200,7 +218,7 @@ function FlightList() {
                     })}
                 </MapContainer>
 
-               
+
             </div>
         </div>
     );

@@ -1,23 +1,33 @@
 import { useState, useEffect } from "react";
+import { DEFAULT_FILTERS } from "../constants/map";
 
 const STORAGE_KEY = "user_preferences";
 
 const defaultPreferences = {
-  theme: "light", // tema por defecto
+  theme: "light",
   filters: {
-    minAltitude: 1000,
-    maxAltitude: 40000,
+    originCountry: "",
+    destCountry: "",
   },
 };
 
 export function useUserPreferences() {
   const [preferences, setPreferences] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : defaultPreferences;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : defaultPreferences;
+    } catch (error) {
+      console.error("Error reading preferences from localStorage", error);
+      return defaultPreferences;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+      try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    } catch (error) {
+      console.error("Error saving preferences to localStorage", error);
+    }
   }, [preferences]);
 
   const savePreferences = (newPrefs) => {
