@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
 
 const firebaseConfig = {
@@ -10,10 +10,11 @@ const firebaseConfig = {
   appId: "1:589633137264:web:87e83d6d01e38bfa2962b5",
 };
 
-const app = initializeApp(firebaseConfig);
+// Solo inicializa si no hay apps
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 
-// Esto hace que la sesión solo dure hasta que se cierre la pestaña/navegador
+// Establece persistencia si aún no se ha establecido (esto se puede mover a tu lógica de login si prefieres)
 setPersistence(auth, browserSessionPersistence)
   .then(() => {
     console.log("Firebase auth set to session persistence");

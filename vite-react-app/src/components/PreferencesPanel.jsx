@@ -3,46 +3,67 @@ import { useUserPreferences } from "../../src/hooks/useUserPreferences";
 import { DEFAULT_FILTERS, MAP_THEMES } from "../constants/map";
 import PropTypes from 'prop-types';
 import '../styles/card.css';
-
 const FiltersSection = ({ filters, onFiltersChange, onClose }) => {
-    const [localFilters, setLocalFilters] = useState(filters || DEFAULT_FILTERS);
-
-    const handleFilterChange = (key, value) => {
-        setLocalFilters(prev => ({ ...prev, [key]: value }));
-    };
+    const [localFilters, setLocalFilters] = useState({
+        airlineCode: filters?.airlineCode || "",
+        airportCode: filters?.airportCode || ""
+    });
 
     const handleApply = () => {
-        onFiltersChange(localFilters);
+        onFiltersChange({
+            airlineCode: localFilters.airlineCode.toUpperCase(),
+            airportCode: localFilters.airportCode.toUpperCase()
+        });
         onClose();
     };
 
     return (
         <div className="mb-4">
-            <h5 className="text-primary mb-3">Filtros</h5>
+            <h5 className="text-primary mb-3">Filtros por Código</h5>
+            
+            {/* Input Aerolínea */}
             <div className="mb-3">
-                <label className="form-label">País de origen</label>
+                <label className="form-label">Aerolínea (ej: IB, BA)</label>
                 <input
                     type="text"
                     className="form-control"
-                    value={localFilters.originCountry || ''}
-                    onChange={(e) => handleFilterChange("originCountry", e.target.value)}
+                    value={localFilters.airlineCode}
+                    onChange={(e) => 
+                        setLocalFilters({
+                            ...localFilters, 
+                            airlineCode: e.target.value.toUpperCase().replace(/[^A-Z]/g, "")
+                        })
+                    }
+                    maxLength={3}
+                    placeholder="Primeras letras del callsign"
                 />
             </div>
+
+            {/* Input Aeropuerto */}
             <div className="mb-3">
-                <label className="form-label">País de destino</label>
+                <label className="form-label">Aeropuerto (ej: MAD, JFK)</label>
                 <input
                     type="text"
                     className="form-control"
-                    value={localFilters.destCountry || ''}
-                    onChange={(e) => handleFilterChange("destCountry", e.target.value)}
+                    value={localFilters.airportCode}
+                    onChange={(e) => 
+                        setLocalFilters({
+                            ...localFilters, 
+                            airportCode: e.target.value.toUpperCase().replace(/[^A-Z]/g, "")
+                        })
+                    }
+                    maxLength={3}
+                    placeholder="Últimas letras del callsign"
                 />
             </div>
+
             <button className="btn btn-primary mt-2" onClick={handleApply}>
                 Aplicar Filtros
             </button>
         </div>
     );
 };
+
 
 const ThemeSection = ({ theme, onThemeChange, onApplyTheme }) => (
     <div className="mb-4">

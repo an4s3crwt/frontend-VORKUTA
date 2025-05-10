@@ -11,6 +11,7 @@ import { useUserPreferences } from "../../hooks/useUserPreferences";
 import api from './../../api';
 import "./FlightsList.css";
 import InfoPopup from "./InfoPopup";
+import AnalyticsPanel from "../../components/AnalyticsPanel";
 
 
 function FlightList() {
@@ -84,20 +85,23 @@ function FlightList() {
     useEffect(() => {
         const fetchLiveData = async () => {
             setIsLoading(true);
+
+            // Recuperamos el caché de la última actualización y los datos
+            const cachedData = getFromCache(CACHE_KEYS.FLIGHT_DATA);
+            const lastFetch = getFromCache(CACHE_KEYS.LAST_FETCH);
+
+            // Comprobamos si los datos están en caché y si la última actualización fue hace menos de 30 segundos
+            if (cachedData && lastFetch && (Date.now() - lastFetch < 30000)) {
+                console.log("Usando datos en caché, última actualización: ", new Date(lastFetch).toLocaleString());
+                setLiveData(cachedData);
+                setIsLoading(false);
+                return;
+            }
+
             try {
-                const cachedData = getFromCache(CACHE_KEYS.FLIGHT_DATA);
-                const lastFetch = getFromCache(CACHE_KEYS.LAST_FETCH);
-
-                if (cachedData && lastFetch && (Date.now() - lastFetch < 30000)) {
-                    setLiveData(cachedData);
-                    setIsLoading(false);
-                    return;
-                }
-
                 const response = await api.get('/opensky/states');
-                // Solo tomamos los primeros 200 con posición válida
                 const validStates = response.data.states?.filter(f => f[5] !== null && f[6] !== null) || [];
-                const limitedStates = validStates.slice(0, 200);
+                const limitedStates = validStates.slice(0, 1000);
 
                 const limitedFlights = {
                     time: response.data.time,
@@ -107,45 +111,37 @@ function FlightList() {
                 setToCache(CACHE_KEYS.FLIGHT_DATA, limitedFlights);
                 setToCache(CACHE_KEYS.LAST_FETCH, Date.now());
 
+                console.log("Actualizando con nuevos datos, hora: ", new Date().toLocaleString());
                 setLiveData(limitedFlights);
                 setError(null);
-
-                try {
-                    await api.post('/flight-data/store', { states: limitedFlights.states });
-                } catch (storeError) {
-                    console.warn('Backend storage failed:', storeError);
-                }
 
             } catch (error) {
                 console.error('Error fetching flight data:', error);
                 setError(error.message);
-                setLiveData({
-                    time: Date.now(),
-                    states: [[
-                        "", "No Callsign", "Unknown", 1000000000, 1000000000,
-                        0, 0, 0, true, 0, 0, 0, null, 0, null, false, 0
-                    ]],
-                });
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchLiveData();
+
         const interval = setInterval(fetchLiveData, 30000);
 
         return () => clearInterval(interval);
     }, []);
 
-    //  Aquí se filtran los vuelos según el filtro y las preferencias
     const filteredFlights = liveData?.states?.filter((flight) => {
-        if (filter && !flight[1]?.toLowerCase().includes(filter.toLowerCase())) {
+        const callsign = (flight[1] || "").trim(); // Limpia el callsign
+
+        // Filtro por aerolínea (primeras letras)
+        if (filters.airlineCode && !callsign.startsWith(filters.airlineCode)) {
             return false;
         }
-        if (filters.minAltitude && flight[7] < filters.minAltitude) return false;
-        if (filters.maxAltitude && flight[7] > filters.maxAltitude) return false;
-        if (flight[1] === "Unknown" || !flight[1]) return false;  // Filtra los vuelos con "Unknown" callsign
-        if (flight[2] === "Unknown" || !flight[2]) return false;  // Filtra los vuelos con "Unknown" en el segundo campo (si es necesario)
+
+        // Filtro por aeropuerto (últimas letras)
+        if (filters.airportCode && !callsign.endsWith(filters.airportCode)) {
+            return false;
+        }
 
         return true;
     });
@@ -174,6 +170,10 @@ function FlightList() {
                     onClose={() => setShowPreferences(false)}
                     onThemeApplied={(newTheme) => {
                         setTheme(newTheme); // Actualiza el estado del tema
+                    }}
+                    onFiltersChange={(newFilters) => {
+                        console.log("Nuevos filtros recibidos:", newFilters); // Debug
+                        setFilters(newFilters);
                     }}
                 />
             )}
@@ -218,6 +218,7 @@ function FlightList() {
                     })}
                 </MapContainer>
 
+                <AnalyticsPanel flights={filteredFlights || []} />
 
             </div>
         </div>
