@@ -1,8 +1,9 @@
 import { Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { Link, useParams } from "react-router-dom";
+import AnalyticsPanel from "../../components/AnalyticsPanel";
 import PreferencesPanel from "../../components/PreferencesPanel";
 import { CACHE_KEYS, DEFAULT_FILTERS, MAP_THEMES } from "../../constants/map";
 import { useAuth } from '../../context/AuthContext';
@@ -11,7 +12,6 @@ import { useUserPreferences } from "../../hooks/useUserPreferences";
 import api from './../../api';
 import "./FlightList.css";
 import InfoPopup from "./InfoPopup";
-import AnalyticsPanel from "../../components/AnalyticsPanel";
 
 
 function FlightList() {
@@ -41,7 +41,7 @@ function FlightList() {
     const [showPreferences, setShowPreferences] = useState(false);
 
     const handleSaveFlight = async (icao, callsign) => {
-        const extraData = {}; 
+        const extraData = {};
 
         try {
             if (savedFlights.some(f => f.flight_icao === icao)) {
@@ -138,23 +138,21 @@ function FlightList() {
             )}
 
             <button
-                className="btn btn-primary preferences-button bg-blue-500 text-white py-2 px-4 rounded-md shadow-md hover:bg-blue-600"
+                className="absolute top-4 right-4 z-50 bg-black text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-800"
                 onClick={() => setShowPreferences(true)}
             >
                 Preferencias
             </button>
 
+
             {showPreferences && (
                 <PreferencesPanel
                     onClose={() => setShowPreferences(false)}
-                    onThemeApplied={(newTheme) => {
-                        setTheme(newTheme);
-                    }}
-                    onFiltersChange={(newFilters) => {
-                        setFilters(newFilters);
-                    }}
+                    onThemeApplied={(newTheme) => setTheme(newTheme)}
+                    onFiltersChange={(newFilters) => setFilters(newFilters)}
                 />
             )}
+
 
             <div className="map-wrapper mt-6">
                 <MapContainer

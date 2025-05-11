@@ -1,4 +1,55 @@
-.flight-map {
-    height: 500px; /* Or any other value you prefer */
+/* FlightList.css */
+
+body, html, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.flights-container {
+    position: relative;
+    height: calc(100vh - 64px); /* Asume que el navbar mide 64px */
+    margin-top: 64px; /* Asegura que el mapa no se meta debajo del navbar */
+    padding: 0;
+}
+
+.map-wrapper {
+    height: 100%;
     width: 100%;
+    position: relative;
+}
+
+.flight-map {
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+}
+
+/* Preferencias botón */
+.preferences-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    background: #ffffffdd;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+/* Error banner */
+.error-banner {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
 }
