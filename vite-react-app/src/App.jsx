@@ -3,7 +3,7 @@ import React from 'react';
 import { Route, Routes } from "react-router-dom";
 import './output.css';
 
-import Airport from "./pages/Airport";
+
 import FlightInfo from "./pages/Flight/FlightInfo";
 import FlightList from "./pages/Flight/FlightList";
 import Home from "./pages/Home";
@@ -21,6 +21,9 @@ import AdminLogs from './pages/Admin/AdminLogs';
 import AccessDenied from './pages/AccessDenied';
 import ErrorBoundary from './components/ErrorBoundary';
 import Data from './pages/Data';
+import Airlines from './pages/Airlines';
+import Airports from './pages/Airports';
+//import Flights from './pages/Flights';
 
 
 export default function App() {
@@ -41,17 +44,13 @@ export default function App() {
                 }>
                     <Route index element={<Home />} />
 
-                    {/* Airport routes */}
-                    <Route path="airport/:icao" element={
-                        <ErrorBoundary>
-                            <Airport />
-                        </ErrorBoundary>
-                    } />
-                    <Route path="/data" element={
-                        <ErrorBoundary>
-                            <Data />
-                        </ErrorBoundary>
-                    } />
+                 
+                   <Route path="data" element={<Data />}>
+               
+                        <Route path="airlines" element={<Airlines />} />
+                        <Route path="airports" element={<Airports />} />
+                        
+                    </Route>
 
                     {/* Flight routes */}
                     <Route path="flights" element={
