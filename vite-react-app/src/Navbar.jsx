@@ -27,11 +27,12 @@ function Navbar() {
                 <nav className="nav-links">
                     <Link className="nav-link" to="/map">Live Map</Link>
                     <Link className="nav-link" to="/scanner">Scanner</Link>
-                    
+
                     {isAuthenticated ? (
                         <>
+                            <Link className="nav-link" to="/data">Data</Link>
                             <Link className="nav-link" to="/profile">Perfil</Link>
-                            <button 
+                            <button
                                 className="nav-link logout-btn"
                                 onClick={handleLogout}
                             >

@@ -1,7 +1,8 @@
-import 'font-awesome/css/font-awesome.min.css';
+
 import React from 'react';
 import { Route, Routes } from "react-router-dom";
-import './App.css';
+import './output.css';
+
 import Airport from "./pages/Airport";
 import FlightInfo from "./pages/Flight/FlightInfo";
 import FlightList from "./pages/Flight/FlightList";
@@ -19,6 +20,8 @@ import { PrivateRoute } from './../src/components/PrivateRoute';
 import AdminLogs from './pages/Admin/AdminLogs';
 import AccessDenied from './pages/AccessDenied';
 import ErrorBoundary from './components/ErrorBoundary';
+import Data from './pages/Data';
+
 
 export default function App() {
     return (
@@ -42,6 +45,11 @@ export default function App() {
                     <Route path="airport/:icao" element={
                         <ErrorBoundary>
                             <Airport />
+                        </ErrorBoundary>
+                    } />
+                    <Route path="/data" element={
+                        <ErrorBoundary>
+                            <Data />
                         </ErrorBoundary>
                     } />
 

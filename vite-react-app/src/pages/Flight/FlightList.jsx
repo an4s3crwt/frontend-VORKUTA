@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import useCache from "../../hooks/useCache";
 import { useUserPreferences } from "../../hooks/useUserPreferences";
 import api from './../../api';
-import "./FlightsList.css";
+import "./FlightList.css";
 import InfoPopup from "./InfoPopup";
 import AnalyticsPanel from "../../components/AnalyticsPanel";
 
@@ -27,17 +27,11 @@ function FlightList() {
     const { preferences } = useUserPreferences();
 
     const [theme, setTheme] = useState(() => {
-        // Default to 'light' if preferences not loaded
         if (!preferences || !preferences.theme) return 'light';
-
-        // Ensure we have a valid theme key
         return MAP_THEMES[preferences.theme] ? preferences.theme : 'light';
     });
 
     const [filter, setFilter] = useState("");
-
-
-
     const [filters, setFilters] = useState(() => {
         if (!preferences || !preferences.filters) return DEFAULT_FILTERS;
         return preferences.filters;
@@ -46,10 +40,8 @@ function FlightList() {
 
     const [showPreferences, setShowPreferences] = useState(false);
 
-    // Guardar un vuelo
     const handleSaveFlight = async (icao, callsign) => {
-        // Define extraData as needed
-        const extraData = {}; // Update with the correct extra flight information
+        const extraData = {}; 
 
         try {
             if (savedFlights.some(f => f.flight_icao === icao)) {
@@ -85,14 +77,10 @@ function FlightList() {
     useEffect(() => {
         const fetchLiveData = async () => {
             setIsLoading(true);
-
-            // Recuperamos el caché de la última actualización y los datos
             const cachedData = getFromCache(CACHE_KEYS.FLIGHT_DATA);
             const lastFetch = getFromCache(CACHE_KEYS.LAST_FETCH);
 
-            // Comprobamos si los datos están en caché y si la última actualización fue hace menos de 30 segundos
             if (cachedData && lastFetch && (Date.now() - lastFetch < 30000)) {
-                console.log("Usando datos en caché, última actualización: ", new Date(lastFetch).toLocaleString());
                 setLiveData(cachedData);
                 setIsLoading(false);
                 return;
@@ -111,10 +99,8 @@ function FlightList() {
                 setToCache(CACHE_KEYS.FLIGHT_DATA, limitedFlights);
                 setToCache(CACHE_KEYS.LAST_FETCH, Date.now());
 
-                console.log("Actualizando con nuevos datos, hora: ", new Date().toLocaleString());
                 setLiveData(limitedFlights);
                 setError(null);
-
             } catch (error) {
                 console.error('Error fetching flight data:', error);
                 setError(error.message);
@@ -124,42 +110,35 @@ function FlightList() {
         };
 
         fetchLiveData();
-
         const interval = setInterval(fetchLiveData, 30000);
 
         return () => clearInterval(interval);
     }, []);
 
     const filteredFlights = liveData?.states?.filter((flight) => {
-        const callsign = (flight[1] || "").trim(); // Limpia el callsign
-
-        // Filtro por aerolínea (primeras letras)
+        const callsign = (flight[1] || "").trim();
         if (filters.airlineCode && !callsign.startsWith(filters.airlineCode)) {
             return false;
         }
-
-        // Filtro por aeropuerto (últimas letras)
         if (filters.airportCode && !callsign.endsWith(filters.airportCode)) {
             return false;
         }
-
         return true;
     });
 
-
     return (
-        <div className="flights-container">
-            {isLoading && <div className="loading-overlay">Loading flight data...</div>}
-            {error && <div className="error-banner">{error}</div>}
+        <div className="flights-container bg-white shadow-lg rounded-xl p-6">
+            {isLoading && <div className="loading-overlay text-xl text-gray-500">Loading flight data...</div>}
+            {error && <div className="error-banner bg-red-500 text-white p-4 rounded-md">{error}</div>}
 
             {!isAuthenticated && (
-                <div className="auth-notice">
-                    <Link to="/login">Inicia sesión</Link> para guardar vuelos y preferencias
+                <div className="auth-notice text-center text-gray-600">
+                    <Link to="/login" className="text-blue-600 underline">Inicia sesión</Link> para guardar vuelos y preferencias
                 </div>
             )}
 
             <button
-                className="btn btn-primary preferences-button"
+                className="btn btn-primary preferences-button bg-blue-500 text-white py-2 px-4 rounded-md shadow-md hover:bg-blue-600"
                 onClick={() => setShowPreferences(true)}
             >
                 Preferencias
@@ -169,21 +148,20 @@ function FlightList() {
                 <PreferencesPanel
                     onClose={() => setShowPreferences(false)}
                     onThemeApplied={(newTheme) => {
-                        setTheme(newTheme); // Actualiza el estado del tema
+                        setTheme(newTheme);
                     }}
                     onFiltersChange={(newFilters) => {
-                        console.log("Nuevos filtros recibidos:", newFilters); // Debug
                         setFilters(newFilters);
                     }}
                 />
             )}
 
-            <div className="map-wrapper">
+            <div className="map-wrapper mt-6">
                 <MapContainer
                     center={[37, 20]}
                     zoom={5}
                     scrollWheelZoom={true}
-                    className="flight-map"
+                    className="flight-map rounded-xl shadow-lg"
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -191,7 +169,6 @@ function FlightList() {
                     />
                     {filteredFlights?.map((stat) => {
                         if (!stat[6]) return null;
-
                         const heading = Math.floor((stat[10] + 23) / 45) * 45;
                         return (
                             <Marker
@@ -203,7 +180,7 @@ function FlightList() {
                                     iconSize: [24, 24],
                                 })}
                             >
-                                <Popup className="custom-popup">
+                                <Popup className="custom-popup bg-white shadow-xl rounded-lg p-4">
                                     <InfoPopup
                                         icao={stat[0]}
                                         callsign={stat[1]}
@@ -219,7 +196,6 @@ function FlightList() {
                 </MapContainer>
 
                 <AnalyticsPanel flights={filteredFlights || []} />
-
             </div>
         </div>
     );
