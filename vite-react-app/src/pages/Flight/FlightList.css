@@ -1,29 +1,32 @@
-/* FlightList.css */
-
-body, html, #root {
+html, body, #root {
     height: 100%;
+    width: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden;
 }
 
 .flights-container {
     position: relative;
-    height: calc(100vh - 64px); /* Asume que el navbar mide 64px */
-    margin-top: 64px; /* Asegura que el mapa no se meta debajo del navbar */
+    height: calc(100vh - 4rem);
+    
     padding: 0;
+    margin: 0;
+    overflow: hidden;
 }
 
 .map-wrapper {
-    height: 100%;
+    
     width: 100%;
-    position: relative;
+    position: absolute;
+    height: 100%;
+    top:0;
+    left: 0;
+    z-index: 1; /* por debajo del navbar */
 }
 
-.flight-map {
-    height: 100%;
-    width: 100%;
-    z-index: 1;
-}
+
+
 
 /* Preferencias botón */
 .preferences-button {

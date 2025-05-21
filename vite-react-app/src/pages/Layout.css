@@ -1,0 +1,9 @@
+.app-layout {
+    display: flex;
+}
+
+.content-area {
+    flex-grow: 1;
+    padding: 2rem;
+    margin-left: 80px; /* para dejar espacio al navbar lateral */
+}

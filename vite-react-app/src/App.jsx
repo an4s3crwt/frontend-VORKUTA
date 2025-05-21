@@ -17,13 +17,11 @@ import Logout from './pages/Logout';
 import CreateAdmin from './pages/Admin/CreateAdmin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import { PrivateRoute } from './../src/components/PrivateRoute';
-import AdminLogs from './pages/Admin/AdminLogs';
+
 import AccessDenied from './pages/AccessDenied';
 import ErrorBoundary from './components/ErrorBoundary';
 import Data from './pages/Data';
-import Airlines from './pages/Airlines';
-import Airports from './pages/Airports';
-//import Flights from './pages/Flights';
+
 
 
 export default function App() {
@@ -44,13 +42,10 @@ export default function App() {
                 }>
                     <Route index element={<Home />} />
 
-                 
-                   <Route path="data" element={<Data />}>
-               
-                        <Route path="airlines" element={<Airlines />} />
-                        <Route path="airports" element={<Airports />} />
-                        
-                    </Route>
+
+                    <Route path="data" element={<Data />}></Route>
+
+
 
                     {/* Flight routes */}
                     <Route path="flights" element={
@@ -94,13 +89,7 @@ export default function App() {
                             </ErrorBoundary>
                         </PrivateRoute>
                     } />
-                    <Route path="/admin/dashboard-logs" element={
-                        <PrivateRoute adminOnly={true}>
-                            <ErrorBoundary>
-                                <AdminLogs />
-                            </ErrorBoundary>
-                        </PrivateRoute>
-                    } />
+
 
                     {/* 404 route */}
                     <Route path="*" element={<NotFound />} />

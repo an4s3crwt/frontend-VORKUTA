@@ -3,7 +3,6 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { Link, useParams } from "react-router-dom";
-import AnalyticsPanel from "../../components/AnalyticsPanel";
 import PreferencesPanel from "../../components/PreferencesPanel";
 import { CACHE_KEYS, DEFAULT_FILTERS, MAP_THEMES } from "../../constants/map";
 import { useAuth } from '../../context/AuthContext';
@@ -127,7 +126,7 @@ function FlightList() {
     });
 
     return (
-        <div className="flights-container bg-white shadow-lg rounded-xl p-6">
+        <div className="flights-container rounded-xl">
             {isLoading && <div className="loading-overlay text-xl text-gray-500">Loading flight data...</div>}
             {error && <div className="error-banner bg-red-500 text-white p-4 rounded-md">{error}</div>}
 
@@ -154,7 +153,7 @@ function FlightList() {
             )}
 
 
-            <div className="map-wrapper mt-6">
+            <div className="map-wrapper">
                 <MapContainer
                     center={[37, 20]}
                     zoom={5}
@@ -193,7 +192,6 @@ function FlightList() {
                     })}
                 </MapContainer>
 
-                <AnalyticsPanel flights={filteredFlights || []} />
             </div>
         </div>
     );

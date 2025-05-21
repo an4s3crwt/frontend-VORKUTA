@@ -1,37 +1,37 @@
 import axios from "axios";
 import { getIdToken, signOut } from "firebase/auth";
-import { auth } from "./firebase"; 
+import { auth } from "./firebase";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/v1", 
+  baseURL: "http://127.0.0.1:8000/api/v1",
 });
 
 // Interceptor para añadir el token a cada solicitud
-api.interceptors.request.use(
-  async (config) => {
-    const currentUser = auth.currentUser;
-    if (currentUser) {
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Si el error es 401 y aún no hemos reintentado
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      auth.currentUser
+    ) {
+      originalRequest._retry = true;
+
       try {
-        // Obtener el token actual
-        const token = await getIdToken(currentUser, true);
-        if (token) {
-          // Añadir el token a los headers
-          config.headers.Authorization = `Bearer ${token}`;
-          console.log('Token añadido a headers:', token); // Debug
-        }
-      } catch (error) {
-        console.error("Error obteniendo token:", error); 
+        const token = await getIdToken(auth.currentUser, true); // fuerza token nuevo
+        console.log(token);
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return api(originalRequest); // reintenta la solicitud original
+      } catch (tokenError) {
+        console.error("Error renovando token:", tokenError);
+        await logout(); // opcional: cerrar sesión automáticamente si falla
       }
-    } else {
-      console.warn("No hay usuario actual en Firebase");
-      // Si no hay usuario autenticado, eliminamos el token
-      config.headers.Authorization = ''; // Eliminar token si no hay usuario
     }
-    return config;
-  },
-  (error) => {
-    console.error("Error en interceptor:", error); 
-    return Promise.reject(error);
+
+    return Promise.reject(error); // otros errores
   }
 );
 

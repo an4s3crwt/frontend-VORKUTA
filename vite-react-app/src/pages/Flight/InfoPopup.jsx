@@ -31,38 +31,38 @@ function InfoPopup({ icao, callsign, altitude, speed, bl, onSaveFlight }) {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const cachedImage = getFromCache(`${CACHE_KEYS.AIRCRAFT_IMAGES}_${icao}`);
-                const cachedAircraftData = getFromCache(`${CACHE_KEYS.AIRCRAFT_DATA}_${icao}`);
+                const imageCacheKey = `${CACHE_KEYS.AIRCRAFT_IMAGES}_${icao}`;
+                const dataCacheKey = `${CACHE_KEYS.AIRCRAFT_DATA}_${icao}`;
+
+                const cachedImage = getFromCache(imageCacheKey);
+                const cachedAircraftData = getFromCache(dataCacheKey);
 
                 if (cachedImage && cachedAircraftData) {
                     setPlaneImgSrc(cachedImage);
                     setAircraftData(cachedAircraftData);
-                    setLoading(false);
-                    return;
+                } else {
+                    const [imgResponse, aircraftResponse] = await Promise.all([
+                        fetch(`https://hexdb.io/hex-image-thumb?hex=${icao}`),
+                        fetch(`https://hexdb.io/api/v1/aircraft/${icao}`)
+                    ]);
+
+                    const [imgData, aircraftJson] = await Promise.all([
+                        imgResponse.text(),
+                        aircraftResponse.json()
+                    ]);
+
+                    const imgSrc = imgData.startsWith("https:") ? imgData : `https:${imgData}`;
+
+                    setToCache(imageCacheKey, imgSrc);
+                    setToCache(dataCacheKey, aircraftJson);
+
+                    setPlaneImgSrc(imgSrc);
+                    setAircraftData(aircraftJson);
                 }
-
-                const [imgResponse, aircraftResponse] = await Promise.all([
-                    fetch(`https://hexdb.io/hex-image-thumb?hex=${icao}`),
-                    fetch(`https://hexdb.io/api/v1/aircraft/${icao}`)
-                ]);
-
-                const [imgData, aircraftJson] = await Promise.all([
-                    imgResponse.text(),
-                    aircraftResponse.json()
-                ]);
-
-                const processedImgSrc = imgData.startsWith("https:") ? imgData : `https:${imgData}`;
-
-                setToCache(`${CACHE_KEYS.AIRCRAFT_IMAGES}_${icao}`, processedImgSrc);
-                setToCache(`${CACHE_KEYS.AIRCRAFT_DATA}_${icao}`, aircraftJson);
-
-                setPlaneImgSrc(processedImgSrc);
-                setAircraftData(aircraftJson);
 
                 const routeResponse = await fetch(`https://hexdb.io/callsign-route-iata?callsign=${callsign}`);
                 const routeData = await routeResponse.text();
                 setRoute(routeData || " - ");
-
             } catch (error) {
                 console.error("Error fetching aircraft data:", error);
                 setAircraftData(DEFAULT_AIRCRAFT_DATA);
@@ -75,7 +75,22 @@ function InfoPopup({ icao, callsign, altitude, speed, bl, onSaveFlight }) {
         fetchData();
     }, [icao, callsign]);
 
-    if (loading) return <div className="popup-loading">Loading...</div>;
+    if (loading) {
+        return <div className="popup-loading">Loading...</div>;
+    }
+
+    const handleSaveFlight = () => {
+        const [departure_airport, arrival_airport] = route.includes("->")
+            ? route.split("->").map(part => part.trim())
+            : ["", ""];
+
+        onSaveFlight(icao, callsign, {
+            aircraft_type: aircraftData.ICAOTypeCode,
+            airline_code: aircraftData.OperatorFlagCode,
+            departure_airport,
+            arrival_airport,
+        });
+    };
 
     return (
         <div className="popup-container">
@@ -113,22 +128,7 @@ function InfoPopup({ icao, callsign, altitude, speed, bl, onSaveFlight }) {
             </div>
 
             <div className="popup-actions">
-                <button
-                    className="save-flight-btn"
-                    onClick={() => {
-                        const [departure_airport, arrival_airport] = route.includes("->")
-                            ? route.split("->").map(r => r.trim())
-                            : ["", ""];
-                    
-                        onSaveFlight(icao, callsign, {
-                            aircraft_type: aircraftData.ICAOTypeCode,
-                            airline_code: aircraftData.OperatorFlagCode,
-                            departure_airport,
-                            arrival_airport,
-                        });
-                    }}
-                    
-                >
+                <button className="save-flight-btn" onClick={handleSaveFlight}>
                     💾 Guardar vuelo
                 </button>
             </div>
