@@ -1,24 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@600&display=swap');
-
-body {
-    background: #eaeef6;
-    font-family: 'Open Sans', sans-serif;
-}
-
+/* Estilos Navbar (igual que antes) */
 .navbar {
     position: fixed;
-    top: 2rem;
+    top: 4rem;
     left: 1rem;
     background: #fff;
     border-radius: 10px;
     padding: 1rem 0;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.03);
     height: calc(100vh - 4rem);
-    width: 70px;
+    width: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
-      z-index: 1000; /* por encima del mapa */
+    z-index: 1000;
+}
+.navbar__link i, 
+.navbar__link svg {
+  font-size: 1.5rem; /* Ajusta a lo que necesites */
+  width: 24px;
+  height: 24px;
 }
 
 .navbar__menu {
@@ -26,10 +26,15 @@ body {
     padding: 0;
     margin: 0;
     width: 100%;
+    position: relative;
 }
 
 .navbar__item {
     width: 100%;
+    position: relative;
+
+    
+    z-index: 2;
 }
 
 .navbar__link {
@@ -39,34 +44,107 @@ body {
     justify-content: center;
     height: 3.5rem;
     width: 100%;
-    color: #6a778e;
+    color: #000000;
     transition: 250ms ease all;
     text-decoration: none;
     background: transparent;
     border: none;
     cursor: pointer;
+    font-weight: 600;
 }
 
 .navbar__link span {
     position: absolute;
-    left: 100%;
+    left: 80%;
     transform: translateX(-3rem);
     margin-left: 1rem;
     opacity: 0;
     pointer-events: none;
-    color: #406ff3;
+    color: #000000;
     background: #fff;
     padding: 0.75rem;
     transition: 250ms ease all;
     border-radius: 17.5px;
     white-space: nowrap;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .navbar__link:hover {
-    color: #406ff3;
+    color: #000000;
 }
 
 .navbar__link:hover span {
     opacity: 1;
     transform: translateX(0);
+}
+
+.navbar__indicator {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3.5rem;
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    transition: top 500ms ease, background 500ms ease;
+    z-index: 1;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.349), 0 8px 16px rgba(64, 111, 243, 0.1);
+}
+
+.navbar--hidden {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.hamburger {
+    position: fixed;
+    top: 1.5rem;
+    /* mismo top que navbar */
+    left: calc(1rem + 35px);
+    /* 1rem (navbar left) + mitad ancho navbar */
+    transform: translateX(-50%);
+    /* centrar el botón respecto a ese left */
+    cursor: pointer;
+    z-index: 1200;
+    /* encima del navbar */
+}
+
+
+.hamburger input {
+    display: none;
+}
+
+.hamburger svg {
+    /* The size of the SVG defines the overall size */
+    height: 3em;
+    /* Define the transition for transforming the SVG */
+    transition: transform 900ms cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.line {
+    fill: none;
+    stroke: rgb(0, 0, 0);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5;
+    /* Define the transition for transforming the Stroke */
+    transition: stroke-dasharray 900ms cubic-bezier(0.4, 0, 0.2, 1),
+        stroke-dashoffset 900ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.line-top-bottom {
+    stroke-dasharray: 12 63;
+}
+
+.hamburger input:checked+svg {
+    transform: rotate(-45deg);
+}
+
+.hamburger input:checked+svg .line-top-bottom {
+    stroke-dasharray: 20 300;
+    stroke-dashoffset: -32.42;
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import './../index.css'; // Asegúrate de que este import esté en tu archivo de entrada
+import './../index.css';
 
 export default function Home() {
     const { isAuthenticated } = useAuth();
@@ -107,9 +107,9 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className=" bg-white rounded-xl shadow-sm p-6 border ">
             {/* Hero Section */}
-            <section className="py-20 px-6 bg-gradient-to-b from-gray-100 to-gray-50">
+            <section className="py-20 px-6 ">
                 <div className="max-w-4xl mx-auto text-center">
                     <h1 className="text-4xl md:text-5xl font-light text-gray-900 mb-4 tracking-tight">
                         Real-Time Flight Tracking
