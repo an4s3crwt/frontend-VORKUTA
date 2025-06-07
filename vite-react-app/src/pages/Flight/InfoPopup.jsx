@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import useCache from "../../hooks/useCache";
-import "./../../styles/InfoPopup.css";
+import "./InfoPopup.css";
 
 const CACHE_KEYS = {
     AIRCRAFT_IMAGES: 'aircraftImagesCache',
@@ -92,48 +92,47 @@ function InfoPopup({ icao, callsign, altitude, speed, bl, onSaveFlight }) {
         });
     };
 
-    return (
-        <div className="popup-container">
-            <div className="popup-header">
-                <span className="popup-title">{aircraftData?.RegisteredOwners}</span>
-                <span className="popup-callsign">{callsign}</span>
-            </div>
+  return (
+   <div className="card">
 
-            <img
-                className="popup-image"
-                src={planeImgSrc || "/aircrafttemp.png"}
-                alt="Aircraft"
-                onError={({ currentTarget }) => {
-                    currentTarget.onerror = null;
-                    currentTarget.src = "/aircrafttemp.png";
-                }}
-            />
-
-            <div className="popup-details">
-                <div className="popup-route">{route}</div>
-
-                <div className="popup-meta">
-                    <span>{aircraftData?.ICAOTypeCode}</span>
-                    <span>(Reg: {aircraftData?.Registration})</span>
-                </div>
-
-                <div className="popup-stats">
-                    <span>{Math.round(altitude * 3.2808)} ft</span>
-                    <span>{Math.round((speed * 18) / 5)} km/h</span>
-                </div>
-
-                <Link to={`/flight-info/${icao}`} className="popup-link">
-                    View flight details →
-                </Link>
-            </div>
-
-            <div className="popup-actions">
-                <button className="save-flight-btn" onClick={handleSaveFlight}>
-                    💾 Guardar vuelo
-                </button>
-            </div>
+        {/* Header */}
+        <div className="px-4 pt-4 pb-2 border-b border-white/20">
+            <h2 className="text-base font-semibold text-black">{aircraftData?.RegisteredOwners}</h2>
+            <p className="text-sm text-neutral-500">{callsign}</p>
         </div>
-    );
+
+        {/* Image */}
+        <img
+            src={planeImgSrc || "/aircrafttemp.png"}
+            alt="Aircraft"
+            className="w-full object-cover border-b border-white/20"
+            onError={({ currentTarget }) => {
+                currentTarget.onerror = null;
+                currentTarget.src = "/aircrafttemp.png";
+            }}
+        />
+
+        {/* Details */}
+        <div className="px-4 py-3 space-y-3">
+            <div className="text-base font-medium text-neutral-800">{route}</div>
+
+            <div className="flex flex-wrap gap-x-3 text-neutral-600 text-sm">
+                <span>{aircraftData?.ICAOTypeCode}</span>
+                <span>(Reg: {aircraftData?.Registration})</span>
+            </div>
+
+            <div className="flex justify-between text-neutral-700 text-sm">
+                <span>{Math.round(altitude * 3.2808)} ft</span>
+                <span>{Math.round((speed * 18) / 5)} km/h</span>
+            </div>
+
+            <Link to={`/flight-info/${icao}`} className="text-blue-600 hover:underline font-medium text-sm">
+                View flight details →
+            </Link>
+        </div>
+    </div>
+);
+
 }
 
 export default InfoPopup;

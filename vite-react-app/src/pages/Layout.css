@@ -3,13 +3,12 @@
     height: 100vh;
     width: 100vw;
 
-
-       
+    overflow: visible;
+ 
 }
-
 /* Navbar visible */
 .navbar {
-    width: 70px;
+   
     transition: transform 0.3s ease, width 0.3s ease;
     /* Si tienes position: fixed aquí, mejor quitarlo para que afecte al layout */
     /* position: fixed; */
@@ -31,7 +30,7 @@
     padding: 1rem;
     transition: margin-left 0.5s ease, width 0.5s ease;
 
-    height: calc(100vh - 4rem);
+
  overflow-y: auto;
    
 

@@ -177,7 +177,7 @@ function FlightList() {
                                     iconSize: [24, 24],
                                 })}
                             >
-                                <Popup className="custom-popup bg-white shadow-xl rounded-lg p-4">
+                                <Popup>
                                     <InfoPopup
                                         icao={stat[0]}
                                         callsign={stat[1]}

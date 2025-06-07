@@ -1,0 +1,20 @@
+/* Estilos personalizados para el popup de Leaflet */
+.leaflet-popup-content-wrapper {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* También anula el borde del "tip" (el triángulo del popup) */
+.leaflet-popup-tip {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Ajusta el contenido para no tener margen automático */
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+  padding: 0 !important;
+}

@@ -1,0 +1,34 @@
+.custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background-color: black;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%);
+  transition: 
+    transform 0.1s ease, 
+    background-color 0.3s ease, 
+    width 0.3s ease, 
+    height 0.3s ease;
+  mix-blend-mode: difference;
+}
+
+.custom-cursor.hover {
+  width: 32px;
+  height: 32px;
+  background-color: white;
+}
+
+.custom-cursor.hidden {
+  opacity: 0;
+}
+
+@media (pointer: coarse) {
+  .custom-cursor {
+    display: none;
+  }
+}
