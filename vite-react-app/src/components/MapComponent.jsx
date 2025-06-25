@@ -14,9 +14,10 @@ const getPlaneIcon = (heading) => {
     });
 };
 
+
 const MapComponent = ({ center, flights }) => {
     useEffect(() => {
-        // Aquí puedes agregar cualquier lógica adicional si es necesario
+      
     }, [flights]);
 
     return (

@@ -1,7 +1,7 @@
 import { Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from "react-leaflet";
 import { Link, useParams } from "react-router-dom";
 import PreferencesPanel from "../../components/PreferencesPanel";
 import { CACHE_KEYS, DEFAULT_FILTERS, MAP_THEMES } from "../../constants/map";
@@ -12,12 +12,26 @@ import api from './../../api';
 import "./FlightList.css";
 import InfoPopup from "./InfoPopup";
 
+const MapBoundsHandler = ({ onBoundsChange }) => {
+    useMapEvents({
+        moveend: (e) => {
+            const bounds = e.target.getBounds();
+            onBoundsChange(bounds);
+        },
+        zoomend: (e) => {
+            const bounds = e.target.getBounds();
+            onBoundsChange(bounds);
+        },
+    });
+    return null;
+};
 
 function FlightList() {
     const { isAuthenticated } = useAuth();
     const { getFromCache, setToCache } = useCache();
     const { infoSlug } = useParams();
     const [liveData, setLiveData] = useState(null);
+    const [mapBounds, setMapBounds] = useState(null);
 
     const [backLink, setBackLink] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -36,12 +50,10 @@ function FlightList() {
         return preferences.filters;
     });
     const [savedFlights, setSavedFlights] = useState([]);
-
     const [showPreferences, setShowPreferences] = useState(false);
 
     const handleSaveFlight = async (icao, callsign) => {
         const extraData = {};
-
         try {
             if (savedFlights.some(f => f.flight_icao === icao)) {
                 alert('Este vuelo ya está guardado');
@@ -55,11 +67,9 @@ function FlightList() {
                     ...extraData
                 }
             });
-            toast.success("Vuelo guardado correctamente");
             setSavedFlights(prev => [...prev, { flight_icao: icao }]);
         } catch (error) {
             console.error('Error saving flight:', error);
-            toast.error("Error al guardar el vuelo");
         }
     };
 
@@ -75,24 +85,23 @@ function FlightList() {
 
     useEffect(() => {
         const fetchLiveData = async () => {
+            if (!mapBounds) return;
+
             setIsLoading(true);
-            const cachedData = getFromCache(CACHE_KEYS.FLIGHT_DATA);
-            const lastFetch = getFromCache(CACHE_KEYS.LAST_FETCH);
-
-            if (cachedData && lastFetch && (Date.now() - lastFetch < 30000)) {
-                setLiveData(cachedData);
-                setIsLoading(false);
-                return;
-            }
-
             try {
-                const response = await api.get('/opensky/states');
-                const validStates = response.data.states?.filter(f => f[5] !== null && f[6] !== null) || [];
-                const limitedStates = validStates.slice(0, 1000);
+                const response = await api.get('/opensky/states', {
+                    params: {
+                        lamin: mapBounds.getSouth(),
+                        lamax: mapBounds.getNorth(),
+                        lomin: mapBounds.getWest(),
+                        lomax: mapBounds.getEast(),
+                    }
+                });
 
+                const validStates = response.data.states?.filter(f => f[5] !== null && f[6] !== null) || [];
                 const limitedFlights = {
                     time: response.data.time,
-                    states: limitedStates,
+                    states: validStates.slice(0, 1000),
                 };
 
                 setToCache(CACHE_KEYS.FLIGHT_DATA, limitedFlights);
@@ -110,24 +119,19 @@ function FlightList() {
 
         fetchLiveData();
         const interval = setInterval(fetchLiveData, 30000);
-
         return () => clearInterval(interval);
-    }, []);
+    }, [mapBounds]);
 
     const filteredFlights = liveData?.states?.filter((flight) => {
         const callsign = (flight[1] || "").trim();
-        if (filters.airlineCode && !callsign.startsWith(filters.airlineCode)) {
-            return false;
-        }
-        if (filters.airportCode && !callsign.endsWith(filters.airportCode)) {
-            return false;
-        }
+        if (filters.airlineCode && !callsign.startsWith(filters.airlineCode)) return false;
+        if (filters.airportCode && !callsign.endsWith(filters.airportCode)) return false;
         return true;
     });
 
     return (
         <div className="flights-container rounded-xl">
-            {isLoading && <div className="loading-overlay text-xl text-gray-500">Loading flight data...</div>}
+            {isLoading && <div className="loading-overlay text-xl text-gray-500">Cargando datos...</div>}
             {error && <div className="error-banner bg-red-500 text-white p-4 rounded-md">{error}</div>}
 
             {!isAuthenticated && (
@@ -143,7 +147,6 @@ function FlightList() {
                 Preferencias
             </button>
 
-
             {showPreferences && (
                 <PreferencesPanel
                     onClose={() => setShowPreferences(false)}
@@ -151,7 +154,6 @@ function FlightList() {
                     onFiltersChange={(newFilters) => setFilters(newFilters)}
                 />
             )}
-
 
             <div className="map-wrapper">
                 <MapContainer
@@ -161,9 +163,11 @@ function FlightList() {
                     className="flight-map rounded-xl shadow-lg"
                 >
                     <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        attribution='&copy; OpenStreetMap'
                         url={MAP_THEMES[theme] || MAP_THEMES.light}
                     />
+                    <MapBoundsHandler onBoundsChange={setMapBounds} />
+
                     {filteredFlights?.map((stat) => {
                         if (!stat[6]) return null;
                         const heading = Math.floor((stat[10] + 23) / 45) * 45;
@@ -191,7 +195,6 @@ function FlightList() {
                         );
                     })}
                 </MapContainer>
-
             </div>
         </div>
     );

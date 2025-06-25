@@ -17,84 +17,119 @@ import Logout from './pages/Logout';
 import CreateAdmin from './pages/Admin/CreateAdmin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import { PrivateRoute } from './../src/components/PrivateRoute';
-
+import AirplaneData from './components/AirplaneData';
+import AirlinesData from './components/AirlinesData';
+import AirportsData from './components/AirportsData';
 import AccessDenied from './pages/AccessDenied';
 import ErrorBoundary from './components/ErrorBoundary';
+import AirportFlights from './components/DataWMap/AirportsFlights';
 import Data from './pages/Data';
 
 
 
 export default function App() {
-    return (
-        <ErrorBoundary>
-            <Routes>
-                {/* Public routes */}
-                <Route path='/access-denied' element={<AccessDenied />} />
-                <Route path='/login' element={<Login />} />
-                <Route path='/register' element={<Register />} />
-                <Route path='/create-admin' element={<CreateAdmin />} />
+  return (
+    <ErrorBoundary>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/access-denied" element={<AccessDenied />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/create-admin" element={<CreateAdmin />} />
 
-                {/* Main protected route */}
-                <Route path="/" element={
-                    <PrivateRoute>
-                        <Layout />
-                    </PrivateRoute>
-                }>
-                    <Route index element={<Home />} />
+        {/* Main protected route */}
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<Home />} />
 
+          {/* Data routes */}
+          <Route path="data" element={<Data />}>
+            <Route path="flights" element={<AirplaneData />} />
+            <Route path="airlines" element={<AirlinesData />} />
+            <Route path="airports" element={<AirportsData />}
+            
+            />
+          
 
-                    <Route path="data" element={<Data />}></Route>
+          </Route>
 
+  <Route
+              path="airport/:iata"
+              element={
+                <ErrorBoundary>
+                  <AirportFlights />
+                </ErrorBoundary>
+              }
+            />
+          {/* Flight routes */}
+          <Route
+            path="flights"
+            element={
+              <ErrorBoundary>
+                <FlightList />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="flight-info/:icao"
+            element={
+              <ErrorBoundary>
+                <FlightInfo />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="map"
+            element={
+              <ErrorBoundary>
+                <FlightList />
+              </ErrorBoundary>
+            }
+          />
 
+          {/* Nearby flights */}
+          <Route
+            path="scanner"
+            element={
+              <ErrorBoundary>
+                <NearbyFlightsScanner />
+              </ErrorBoundary>
+            }
+          />
 
-                    {/* Flight routes */}
-                    <Route path="flights" element={
-                        <ErrorBoundary>
-                            <FlightList />
-                        </ErrorBoundary>
-                    } />
-                    <Route path="flight-info/:icao" element={
-                        <ErrorBoundary>
-                            <FlightInfo />
-                        </ErrorBoundary>
-                    } />
+          {/* User */}
+          <Route
+            path="profile"
+            element={
+              <ErrorBoundary>
+                <Profile />
+              </ErrorBoundary>
+            }
+          />
+          <Route path="logout" element={<Logout />} />
 
-                    {/* Map route */}
-                    <Route path="map" element={
-                        <ErrorBoundary>
-                            <FlightList />
-                        </ErrorBoundary>
-                    } />
+          {/* Admin */}
+          <Route
+            path="admin/dashboard"
+            element={
+              <PrivateRoute adminOnly={true}>
+                <ErrorBoundary>
+                  <AdminDashboard />
+                </ErrorBoundary>
+              </PrivateRoute>
+            }
+          />
 
-                    {/* Nearby flights scanner */}
-                    <Route path='/scanner' element={
-                        <ErrorBoundary>
-                            <NearbyFlightsScanner />
-                        </ErrorBoundary>
-                    } />
-
-                    {/* User routes */}
-                    <Route path="/profile" element={
-                        <ErrorBoundary>
-                            <Profile />
-                        </ErrorBoundary>
-                    } />
-                    <Route path="/logout" element={<Logout />} />
-
-                    {/* Admin routes */}
-                    <Route path="/admin/dashboard" element={
-                        <PrivateRoute adminOnly={true}>
-                            <ErrorBoundary>
-                                <AdminDashboard />
-                            </ErrorBoundary>
-                        </PrivateRoute>
-                    } />
-
-
-                    {/* 404 route */}
-                    <Route path="*" element={<NotFound />} />
-                </Route>
-            </Routes>
-        </ErrorBoundary>
-    );
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </ErrorBoundary>
+  );
 }
