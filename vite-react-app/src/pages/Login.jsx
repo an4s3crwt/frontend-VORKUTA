@@ -37,9 +37,8 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-neutral-100 flex items-center justify-center px-4 font-[Inter]">
-      {/* Contenedor central con efecto vidrio */}
       <div className="w-full max-w-sm bg-white/60 backdrop-blur-2xl border border-black/10 rounded-3xl shadow-xl p-10 transition-all duration-300">
-        {/* Header con animación suave */}
+        {/* Header */}
         <div className="text-center mb-10 animate-fade-in">
           <h1 className="text-5xl font-semibold tracking-tight text-black mb-3">
             Flighty
@@ -49,9 +48,8 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleLogin} className="space-y-7">
-          {/* Email */}
           <div>
             <label className="block text-xs font-medium uppercase tracking-widest text-neutral-700 mb-2">
               Email Address
@@ -65,7 +63,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-xs font-medium uppercase tracking-widest text-neutral-700 mb-2">
               Password
@@ -93,7 +90,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Botón de login */}
+          {/* Button */}
           <button
             type="submit"
             disabled={loading}
@@ -138,14 +135,17 @@ export default function Login() {
           )}
         </form>
 
-        {/* Forgot password */}
+        {/* Link to Register */}
         <div className="mt-6 text-center">
-          <a
-            href="/forgot-password"
-            className="text-sm text-neutral-600 hover:text-black transition-all"
-          >
-            Forgot your password?
-          </a>
+          <p className="text-sm text-neutral-600">
+            Don’t have an account?{' '}
+            <a
+              href="/register"
+              className="text-black font-medium hover:opacity-80 transition-opacity"
+            >
+              Create one
+            </a>
+          </p>
         </div>
 
         {/* Footer */}
