@@ -34,7 +34,7 @@ html, body, #root {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    z-index: 1001;
+    z-index: 5000;
 }
 
 /* Loading overlay */

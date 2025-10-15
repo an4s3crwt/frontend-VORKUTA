@@ -17,6 +17,7 @@
 html, body{
   height: 100%;
   width: 100%;
+
 }
 
 /* Background noise effect with will-change optimization */
@@ -75,7 +76,7 @@ body::before {
 
 /* Content to be revealed */
 .content {
-  position: fixed;
+  position: relative;
   top: 0;
   left: 0;
   width: 100%;
@@ -88,6 +89,7 @@ body::before {
   padding: 20px;
   text-align: center;
   color: var(--primary-color);
+  pointer-events: auto; /* Para poder interactuar */
 }
 
 .quote-container {
@@ -139,11 +141,11 @@ body::before {
 /* Canvas overlay - Fixed to be below noise effect */
 canvas {
   display: block;
-  position: relative !important;
+  position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
+  width: 100% !important;
+  height: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
   z-index: 2; /* Above content but below noise */

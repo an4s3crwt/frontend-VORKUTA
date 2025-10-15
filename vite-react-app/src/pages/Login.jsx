@@ -28,7 +28,7 @@ export default function Login() {
             const backendUser = response.data;
 
             dispatch(login({ user: backendUser.user, token: null }));
-            navigate('/dashboard');
+            navigate('/');
         } catch (err) {
             console.error('Login error:', err);
             setError('Incorrect credentials or network error.');

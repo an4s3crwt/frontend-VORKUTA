@@ -36,6 +36,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/create-admin" element={<CreateAdmin />} />
+        
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
 
         {/* Main protected route */}
         <Route
@@ -126,8 +129,7 @@ export default function App() {
             }
           />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
+        
         </Route>
       </Routes>
     </ErrorBoundary>

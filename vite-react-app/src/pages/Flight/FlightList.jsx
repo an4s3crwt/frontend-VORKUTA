@@ -140,12 +140,14 @@ function FlightList() {
                 </div>
             )}
 
-            <button
-                className="absolute top-4 right-4 z-50 bg-black text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-800"
-                onClick={() => setShowPreferences(true)}
-            >
-                Preferencias
-            </button>
+
+  <button
+    className="preferences-button bg-black text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition-all duration-200"
+    onClick={() => setShowPreferences(true)}
+  >
+    Preferencias
+  </button>
+
 
             {showPreferences && (
                 <PreferencesPanel
