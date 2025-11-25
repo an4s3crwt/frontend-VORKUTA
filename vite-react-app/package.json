@@ -10,16 +10,21 @@
     "build:css": "tailwindcss -i ./src/index.css -o ./src/output.css"
   },
   "dependencies": {
+    "@deck.gl/layers": "^9.2.2",
+    "@deck.gl/react": "^9.2.2",
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@heroicons/react": "^2.2.0",
+"@react-three/drei": "^9.102.6",
+    "@react-three/fiber": "^8.18.0",
     "@reduxjs/toolkit": "^2.7.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.9.0",
     "bootstrap": "^5.3.5",
-    "chart.js": "^4.4.9",
+    "chart.js": "^4.5.1",
     "font-awesome": "^4.7.0",
+    "framer-motion": "^12.23.24",
     "jwt-decode": "^4.0.0",
     "laravel-echo": "^2.0.2",
     "leaflet": "^1.9.4",
@@ -27,19 +32,22 @@
     "leaflet.awesome-markers": "^2.0.5",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.509.0",
+    "mapbox-gl": "^3.16.0",
+    "node": "^25.1.0",
     "prop-types": "^15.8.1",
     "pusher-js": "^8.4.0",
     "react": "^18.2.0",
-    "react-chartjs-2": "^5.3.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
+    "react-map-gl": "^7.0.20",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.22.3",
-    "recharts": "^2.15.3",
+    "recharts": "^2.15.4",
     "redux": "^5.0.1",
     "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.17",
-    "three": "^0.177.0",
+    "three": "0.158.0",
     "web-vitals": "^2.1.4"
   },
   "eslintConfig": {
@@ -61,12 +69,12 @@
     ]
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^3.0.0",
+    "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "vite": "^4.0.0"
+    "vite": "^7.2.2"
   },
   "proxy": "http://localhost:8000"
 }

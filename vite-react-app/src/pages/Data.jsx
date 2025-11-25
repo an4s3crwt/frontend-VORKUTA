@@ -1,46 +1,59 @@
-import React from 'react';
-import { Outlet, Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { Outlet, Link, Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Data = () => {
-    const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-    return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex items-center mb-6">
-                <Link to="/" className="text-blue-600 hover:text-blue-800 mr-2">Home</Link>
-                <span className="text-gray-500">/</span>
-                <span className="ml-2 text-gray-600">Data</span>
-            </div>
+  const activeTab = location.pathname.split("/")[2] || "airlines";
 
-            <div className="flex space-x-4 mb-8 border-b border-gray-200">
-                <Link 
-                    to="/data/airlines" 
-                    className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600"
-                >
-                    Airlines
-                </Link>
-                <Link 
-                    to="/data/airports" 
-                    className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600"
-                >
-                    Airports
-                </Link>
-                <Link 
-                    to="/data/flights" 
-                    className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600"
-                >
-                    Flights
-                </Link>
-            </div>
+  const tabs = [
+    { name: "Airlines", path: "airlines" },
+    { name: "Airports", path: "airports" },
+    { name: "Flights", path: "flights" },
+  ];
 
-            <Outlet />
+  return (
+    <div className="p-8 max-w-7xl mx-auto transition-all duration-500">
+    
+       
+
+      {/* Tabs */}
+      <div className="flex justify-center mb-10">
+        <div className="flex bg-white/60 dark:bg-neutral-900/70 backdrop-blur-2xl border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] p-1 transition-all duration-300">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.path}
+              to={`/data/${tab.path}`}
+              className={`
+                relative px-6 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
+                ${
+                  activeTab === tab.path
+                    ? "bg-black text-white shadow-md scale-[1.03]"
+                    : "text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10"
+                }
+              `}
+            >
+              {tab.name}
+              {activeTab === tab.path && (
+                <div className="absolute -bottom-[2px] left-0 right-0 mx-auto w-8 h-[2px] bg-gradient-to-r from-gray-700 to-gray-400 rounded-full"></div>
+              )}
+            </Link>
+          ))}
         </div>
-    );
+      </div>
+
+      {/* Contenido */}
+      <div className="bg-white/60 dark:bg-neutral-900/70 backdrop-blur-2xl rounded-3xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] p-8 transition-all duration-500 border border-gray-100 dark:border-neutral-800">
+        <Outlet />
+      </div>
+    </div>
+  );
 };
 
 export default Data;

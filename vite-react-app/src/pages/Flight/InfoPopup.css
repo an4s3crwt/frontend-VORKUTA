@@ -93,6 +93,23 @@
   background: white;
   color: black;
 }
+.popup-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.popup-close-btn:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
 
 /* === Loading state === */
 .popup-card.loading {

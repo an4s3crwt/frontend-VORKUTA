@@ -13,7 +13,7 @@ import api from './../src/api';
 // Time synchronization function
 const syncTimeWithServer = async () => {
   try {
-    const response = await api.get('/api/server-time');
+    const response = await api.get('/server-time');
     const serverTime = new Date(response.data.server_time);
     const diff = Math.abs(serverTime - new Date());
 

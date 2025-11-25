@@ -1,219 +1,437 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 
-// Loading Skeleton Component
-const AirlineSkeleton = () => (
-  <div className="border p-4 rounded-xl shadow bg-white flex items-center gap-4 animate-pulse">
-    <div className="w-8 h-8 bg-gray-200 rounded"></div>
-    <div className="flex-1 space-y-2">
-      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-    </div>
-  </div>
-);
+// --- Importaciones para el 3D ---
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Sphere } from '@react-three/drei';
+import * as THREE from 'three';
 
-// Error Display Component
-const ErrorDisplay = ({ error, onRetry }) => (
-  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center mb-4">
-    <p className="text-red-600 mb-2">{error}</p>
-    <button 
-      onClick={onRetry}
-      className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded text-red-800 transition"
-    >
-      Retry
-    </button>
-  </div>
-);
-
-// Back to Top Component
-const BackToTop = () => {
-  const [visible, setVisible] = useState(false);
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
-
-  useEffect(() => {
-    const toggleVisibility = () => {
-      if (window.pageYOffset > 300) setVisible(true);
-      else setVisible(false);
-    };
-    
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
-  }, []);
-
-  return (
-    <button
-      onClick={scrollToTop}
-      className={`fixed bottom-6 right-6 p-3 bg-blue-500 text-white rounded-full shadow-lg transition-opacity duration-300 ${
-        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-      aria-label="Back to top"
-    >
-      ↑
-    </button>
-  );
+// --- Constantes ---
+const AIRLINE_MAP = {
+  IBE: { name: "Iberia", color: "#E83323" },
+  RYR: { name: "Ryanair", color: "#003882" },
+  VLG: { name: "Vueling", color: "#FFCC00" },
+  DLH: { name: "Lufthansa", color: "#001A5E" },
+  AFR: { name: "Air France", color: "#00205B" },
+  BAW: { name: "British Airways", color: "#00306E" },
+  KLM: { name: "KLM", color: "#00A1E4" },
+  EZY: { name: "easyJet", color: "#FF6600" },
+  UAE: { name: "Emirates", color: "#D82C1F" },
+  AAL: { name: "American Airlines", color: "#0078D2" },
+  DAL: { name: "Delta", color: "#A8001F" },
+  UAL: { name: "United", color: "#005DAA" },
+  SWR: { name: "Swiss", color: "#E2051E" },
+  QTR: { name: "Qatar Airways", color: "#5C0D32" },
+  THY: { name: "Turkish Airlines", color: "#C00C0C" },
+  DEFAULT: { name: (prefix) => prefix, color: "#9CA3AF" },
 };
 
-const AirlinesData = () => {
+const MAX_MAP_POINTS = 500;
+
+// --- COMPONENTE GLOBO 3D (VERSIÓN SEGURA / DEPURADA) ---
+function Globe3D({ positions = [] }) {
+  const globeRef = useRef();
+
+  // usar geometría y material memorizados (objetos THREE, no JSX)
+  const sphereGeometry = useMemo(() => new THREE.SphereGeometry(0.005, 8, 8), []);
+
+  // Creamos un material base y clonaremos por color (más seguro que pasar JSX)
+  const baseMaterial = useMemo(() => new THREE.MeshBasicMaterial(), []);
+
+  const latLonToCartesian = useCallback((lat, lon, radius = 1) => {
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lon + 180) * (Math.PI / 180);
+    const x = -radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.cos(phi);
+    const z = radius * Math.sin(phi) * Math.sin(theta);
+    return [x, y, z];
+  }, []);
+
+  // Aseguramos que positions sea siempre un array
+  const safePositions = Array.isArray(positions) ? positions : [];
+
+  return (
+    <>
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[5, 3, 5]} intensity={1.5} />
+
+      {/* Globo: usamos el componente "Sphere" de drei con un material simple */}
+      <Sphere ref={globeRef} args={[1, 32, 32]}>
+        <meshStandardMaterial color="#222" roughness={0.5} />
+      </Sphere>
+
+      {/* Renderizado seguro de puntos: usamos meshes simples pero con geometría memorizada */}
+      {safePositions.slice(0, MAX_MAP_POINTS).map((p, idx) => {
+        const [x, y, z] = latLonToCartesian(p.lat ?? 0, p.lon ?? 0, 1.005);
+        // clonamos el material base para poder asignar color por instancia
+        const mat = baseMaterial.clone();
+        mat.color = new THREE.Color(p.color || AIRLINE_MAP.DEFAULT.color);
+        mat.transparent = true;
+        mat.opacity = 0.95;
+
+        return (
+          <mesh key={p.icao24 ?? idx} position={[x, y, z]} geometry={sphereGeometry} material={mat} />
+        );
+      })}
+    </>
+  );
+}
+
+// --- COMPONENTES DE GRÁFICOS (idénticos, pero asegurando defensivas menores) ---
+function ManualBarChart({ data }) {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  const maxFlights = Math.max(...data.map(a => a.flights));
+  const paddingTop = 20;
+  const barVariants = { initial: { filter: 'brightness(1)', scaleY: 1 }, hover: { filter: 'brightness(1.15)', scaleY: 1.03, transition: { type: 'spring', stiffness: 400, damping: 10 } } };
+  const tooltipVariants = { initial: { opacity: 0, y: 5, scale: 0.95 }, hover: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } } };
+
+  return (
+    <div className="w-full h-full flex items-end gap-1 px-6 pb-2">
+      {data.map((airline, index) => {
+        const barHeight = maxFlights > 0 ? (airline.flights / maxFlights) * (100 - (paddingTop / (300 / 100))) : 0;
+        return (
+          <motion.div key={airline.name || index} className="flex flex-col items-center flex-1 h-full pt-4 relative" initial="initial" whileHover="hover">
+            <motion.div className="absolute bottom-full mb-3 w-max max-w-xs p-3 rounded-xl bg-white/70 backdrop-blur-md shadow-lg border border-white/40 z-10 pointer-events-none" variants={tooltipVariants}>
+              <div className="text-black">
+                <strong className="font-semibold text-xs block">{airline.name}</strong>
+                <span className="text-xs text-neutral-700">Total: {airline.flights} vuelos</span>
+              </div>
+            </motion.div>
+            <div className="relative w-full h-full flex items-end">
+              <motion.div className="w-full bg-neutral-800 rounded-t-sm shadow-md origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${barHeight}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+            </div>
+            <span className="text-[10px] text-neutral-600 mt-2 text-center max-w-full truncate overflow-hidden">{airline.name}</span>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ManualStackedBarChart({ data }) {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  const maxTotal = Math.max(...data.map(a => a.flights));
+  const paddingTop = 20;
+  const barVariants = { initial: { filter: 'brightness(1)', scaleY: 1 }, hover: { filter: 'brightness(1.15)', scaleY: 1.03, transition: { type: 'spring', stiffness: 400, damping: 10 } } };
+  const tooltipVariants = { initial: { opacity: 0, y: 5, scale: 0.95 }, hover: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } } };
+
+  return (
+    <div className="w-full h-full flex flex-col justify-between p-2">
+      <div className="flex justify-center items-center gap-4 text-xs text-neutral-600 mb-2">
+        <div className="flex items-center gap-1"><span className="w-3 h-3 bg-neutral-800 rounded-full"></span> En Vuelo</div>
+        <div className="flex items-center gap-1"><span className="w-3 h-3 bg-neutral-400 rounded-full"></span> En Tierra</div>
+      </div>
+      <div className="flex-grow flex items-end gap-1 px-6 pb-2">
+        {data.map((airline, index) => {
+          const onGroundPercent = maxTotal > 0 ? (airline.onGround / maxTotal) * (100 - (paddingTop / (300 / 100))) : 0;
+          const inAirPercent = maxTotal > 0 ? (airline.inAir / maxTotal) * (100 - (paddingTop / (300 / 100))) : 0;
+          return (
+            <motion.div key={airline.name || index} className="flex flex-col items-center flex-1 h-full pt-4 relative" initial="initial" whileHover="hover">
+              <motion.div className="absolute bottom-full mb-3 w-max max-w-xs p-3 rounded-xl bg-white/70 backdrop-blur-md shadow-lg border border-white/40 z-10 pointer-events-none" variants={tooltipVariants}>
+                <div className="text-black">
+                  <strong className="font-semibold text-xs block">{airline.name}</strong>
+                  <span className="text-xs text-neutral-700 block">En Vuelo: {airline.inAir}</span>
+                  <span className="text-xs text-neutral-700 block">En Tierra: {airline.onGround}</span>
+                </div>
+              </motion.div>
+              <div className="relative w-full h-full flex flex-col justify-end">
+                <motion.div className="w-full bg-neutral-800 rounded-t-sm shadow-sm origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${inAirPercent}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+                <motion.div className="w-full bg-neutral-400 shadow-sm origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${onGroundPercent}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+              </div>
+              <span className="text-[10px] text-neutral-600 mt-2 text-center max-w-full truncate overflow-hidden">{airline.name}</span>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AltitudeChart({ data }) {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  const maxAltitude = Math.max(...data.map(a => a.avgAltitude));
+  const paddingTop = 20;
+  const barVariants = { initial: { filter: 'brightness(1)', scaleY: 1 }, hover: { filter: 'brightness(1.15)', scaleY: 1.03, transition: { type: 'spring', stiffness: 400, damping: 10 } } };
+  const tooltipVariants = { initial: { opacity: 0, y: 5, scale: 0.95 }, hover: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } } };
+
+  return (
+    <div className="w-full h-full flex items-end gap-1 px-6 pb-2">
+      {data.map((airline, index) => {
+        const barHeight = maxAltitude > 0 ? (airline.avgAltitude / maxAltitude) * (100 - (paddingTop / (300 / 100))) : 0;
+        return (
+          <motion.div key={airline.name || index} className="flex flex-col items-center flex-1 h-full pt-4 relative" initial="initial" whileHover="hover">
+            <motion.div className="absolute bottom-full mb-3 w-max max-w-xs p-3 rounded-xl bg-white/70 backdrop-blur-md shadow-lg border border-white/40 z-10 pointer-events-none" variants={tooltipVariants}>
+              <div className="text-black">
+                <strong className="font-semibold text-xs block">{airline.name}</strong>
+                <span className="text-xs text-neutral-700">Altitud media: {airline.avgAltitude.toLocaleString('es-ES')} m</span>
+              </div>
+            </motion.div>
+            <div className="relative w-full h-full flex items-end">
+              <motion.div className="w-full bg-neutral-800 rounded-t-sm shadow-md origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${barHeight}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+            </div>
+            <span className="text-[10px] text-neutral-600 mt-2 text-center max-w-full truncate overflow-hidden">{airline.name}</span>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FlightPhaseChart({ data }) {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  const paddingTop = 20;
+  const barVariants = { initial: { filter: 'brightness(1)', scaleY: 1 }, hover: { filter: 'brightness(1.15)', scaleY: 1.03, transition: { type: 'spring', stiffness: 400, damping: 10 } } };
+  const tooltipVariants = { initial: { opacity: 0, y: 5, scale: 0.95 }, hover: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } } };
+
+  return (
+    <div className="w-full h-full flex flex-col justify-between p-2">
+      <div className="flex justify-center items-center gap-3 text-xs text-neutral-600 mb-2">
+        <div className="flex items-center gap-1"><span className="w-3 h-3 bg-neutral-800 rounded-full"></span> Crucero</div>
+        <div className="flex items-center gap-1"><span className="w-3 h-3 bg-neutral-600 rounded-full"></span> Ascenso</div>
+        <div className="flex items-center gap-1"><span className="w-3 h-3 bg-neutral-400 rounded-full"></span> Descenso</div>
+      </div>
+      <div className="flex-grow flex items-end gap-1 px-6 pb-2">
+        {data.map((airline, index) => {
+          const totalInAir = airline.cruise + airline.ascending + airline.descending;
+          const cruisePercent = totalInAir > 0 ? (airline.cruise / totalInAir) * (100 - (paddingTop / (300 / 100))) : 0;
+          const ascendingPercent = totalInAir > 0 ? (airline.ascending / totalInAir) * (100 - (paddingTop / (300 / 100))) : 0;
+          const descendingPercent = totalInAir > 0 ? (airline.descending / totalInAir) * (100 - (paddingTop / (300 / 100))) : 0;
+          return (
+            <motion.div key={airline.name || index} className="flex flex-col items-center flex-1 h-full pt-4 relative" initial="initial" whileHover="hover">
+              <motion.div className="absolute bottom-full mb-3 w-max max-w-xs p-3 rounded-xl bg-white/70 backdrop-blur-md shadow-lg border border-white/40 z-10 pointer-events-none" variants={tooltipVariants}>
+                <div className="text-black">
+                  <strong className="font-semibold text-xs block">{airline.name}</strong>
+                  <span className="text-xs text-neutral-700 block">Crucero: {airline.cruise}</span>
+                  <span className="text-xs text-neutral-700 block">Ascenso: {airline.ascending}</span>
+                  <span className="text-xs text-neutral-700 block">Descenso: {airline.descending}</span>
+                </div>
+              </motion.div>
+              <div className="relative w-full h-full flex flex-col justify-end">
+                <motion.div className="w-full bg-neutral-800 rounded-t-sm shadow-sm origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${cruisePercent}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+                <motion.div className="w-full bg-neutral-600 shadow-sm origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${ascendingPercent}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+                <motion.div className="w-full bg-neutral-400 shadow-sm origin-bottom" variants={barVariants} initial={{ height: "0%" }} animate={{ height: `${descendingPercent}%` }} transition={{ type: "spring", stiffness: 300, damping: 50, delay: index * 0.05 }} />
+              </div>
+              <span className="text-[10px] text-neutral-600 mt-2 text-center max-w-full truncate overflow-hidden">{airline.name}</span>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// --- COMPONENTE PRINCIPAL ---
+export default function AirlinesDashboardApple() {
   const [airlines, setAirlines] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [offset, setOffset] = useState(0);
+  const [positions, setPositions] = useState([]);
+  const [stats, setStats] = useState({ total: 0, top: "", topCount: 0 });
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const observer = useRef();
-  const apiCache = useRef(new Map());
 
-  const username = 'an4s3crwt';
-  const password = 'Mentaybolita1';
+  const OPENSKY_USERNAME = "an4s3crwt";
+const OPENSKY_PASSWORD = "Mentaybolita1";
 
-  const fetchData = useCallback(async () => {
-    if (!hasMore) return;
-    
+const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
-    const cacheKey = `airlines-${offset}`;
-    const cached = apiCache.current.get(cacheKey);
-    
-    if (cached) {
-      setAirlines(prev => [...prev, ...cached]);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch('https://opensky-network.org/api/states/all', {
-        headers: { Authorization: 'Basic ' + btoa(`${username}:${password}`) },
+      const auth = btoa(`${OPENSKY_USERNAME}:${OPENSKY_PASSWORD}`);
+      const res = await fetch("https://opensky-network.org/api/states/all", {
+        headers: {
+          "Authorization": `Basic ${auth}`
+        }
       });
-      
-      if (!res.ok) throw new Error(`API request failed with status ${res.status}`);
-      
+      if (!res.ok) throw new Error("La respuesta de la red no fue exitosa");
+
       const data = await res.json();
-      const allCalls = Array.from(new Set(data.states.map(f => f[1]).filter(Boolean)));
-      
-      // Check if we've reached the end
-      if (offset >= allCalls.length) {
-        setHasMore(false);
-        setLoading(false);
-        return;
+      if (!data || !Array.isArray(data.states)) throw new Error("No se recibieron datos de vuelos.");
+
+      const counts = {};
+      const positionsData = [];
+
+      for (const f of data.states) {
+        if (!f) continue;
+        const callsign = f[1];
+        const onGround = !!f[8];
+        const prefix = (callsign || "").slice(0, 3).toUpperCase();
+
+        if (prefix) {
+          if (!counts[prefix]) {
+            counts[prefix] = {
+              total: 0, onGround: 0, inAir: 0,
+              altTotal: 0, altCount: 0,
+              ascending: 0, descending: 0, cruise: 0
+            };
+          }
+
+          counts[prefix].total++;
+
+          if (onGround) {
+            counts[prefix].onGround++;
+          } else {
+            counts[prefix].inAir++;
+
+            const altitude = f[7];
+            const vertRate = f[11];
+
+            if (altitude != null) {
+              counts[prefix].altTotal += altitude;
+              counts[prefix].altCount++;
+            }
+
+            if (vertRate != null) {
+              if (vertRate > 1) {
+                counts[prefix].ascending++;
+              } else if (vertRate < -1) {
+                counts[prefix].descending++;
+              } else {
+                counts[prefix].cruise++;
+              }
+            } else {
+              counts[prefix].cruise++;
+            }
+          }
+        }
+
+        if (positionsData.length < MAX_MAP_POINTS && f[5] != null && f[6] != null && !onGround) {
+          const airlineInfo = AIRLINE_MAP[prefix] || AIRLINE_MAP.DEFAULT;
+
+          positionsData.push({
+            icao24: f[0],
+            callsign: callsign || "N/A",
+            originCountry: f[2],
+            lon: f[5],
+            lat: f[6],
+            velocity: Math.round((f[9] || 0) * 3.6),
+            color: airlineInfo.color || AIRLINE_MAP.DEFAULT.color,
+          });
+        }
       }
 
-      const calls = allCalls.slice(offset, offset + 20);
+      const sorted = Object.entries(counts || {}).sort((a, b) => b[1].total - a[1].total);
 
-      const results = await Promise.all(
-        calls.map(async cs => {
-          try {
-            const airlineRes = await fetch(`https://hexdb.io/api/v1/airline/icao/${cs}`);
-            if (!airlineRes.ok) return null;
-            
-            const json = await airlineRes.json();
-            if (!json.name) return null;
+      const mappedAirlines = sorted.slice(0, 10).map(([prefix, data]) => {
+        const airlineInfo = AIRLINE_MAP[prefix] || AIRLINE_MAP.DEFAULT;
+        return {
+          prefix,
+          name: typeof airlineInfo.name === 'function' ? airlineInfo.name(prefix) : airlineInfo.name,
+          flights: data.total,
+          onGround: data.onGround,
+          inAir: data.inAir,
+          avgAltitude: data.altCount > 0 ? Math.round(data.altTotal / data.altCount) : 0,
+          ascending: data.ascending,
+          descending: data.descending,
+          cruise: data.cruise,
+        };
+      });
 
-            return {
-              callsign: cs,
-              name: json.name,
-              country: json.country || 'Unknown',
-              countryCode: json.country_code || 'US',
-            };
-          } catch (e) {
-            console.error(`Failed to fetch details for ${cs}`, e);
-            return null;
-          }
-        })
-      );
-
-      const validResults = results.filter(Boolean);
-      apiCache.current.set(cacheKey, validResults);
-      setAirlines(prev => [...prev, ...validResults]);
-    } catch (e) {
-      setError(e.message || 'Failed to load airline data');
-      console.error('Fetch error:', e);
+      setAirlines(mappedAirlines);
+      setPositions(positionsData);
+      setStats({
+        total: Array.isArray(data.states) ? data.states.length : 0,
+        top: mappedAirlines[0]?.name || "—",
+        topCount: mappedAirlines[0]?.flights || 0,
+      });
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Error fetching OpenSky data:", err);
+      setError(`Error: ${err?.message || String(err)}`);
     } finally {
       setLoading(false);
     }
-  }, [offset, hasMore]);
+  }, []);
 
-  // Intersection Observer for infinite scroll
-  const lastRef = useCallback(node => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        setOffset(prev => prev + 20);
-      }
-    }, { threshold: 0.1 });
-    
-    if (node) observer.current.observe(node);
-  }, [loading, hasMore]);
-
-  // Initial fetch and cleanup
   useEffect(() => {
     fetchData();
-    
-    return () => {
-      if (observer.current) {
-        observer.current.disconnect();
-      }
-    };
+    const interval = setInterval(fetchData, 300000);
+    return () => clearInterval(interval);
   }, [fetchData]);
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">Active Airlines</h2>
-      
-      {error && <ErrorDisplay error={error} onRetry={fetchData} />}
-      
-      <div className="space-y-4">
-        {airlines.length === 0 && !loading && !error && (
-          <div className="text-center py-8 text-gray-500">
-            No airline data available
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-to-b from-neutral-100 to-neutral-300 text-black font-[Inter] flex flex-col items-center p-10">
+      <div className="max-w-[1300px] w-full flex flex-col gap-8">
         
-        {airlines.map((airline, i) => (
-          <div
-            ref={i === airlines.length - 1 ? lastRef : null}
-            key={`${airline.callsign}-${i}`}
-            className="border p-4 rounded-xl shadow hover:shadow-md transition bg-white flex items-center gap-4 hover:bg-gray-50"
+        <header className="flex items-center justify-between">
+          <h1 className="text-4xl font-semibold tracking-tight drop-shadow-sm">Tráfico Aéreo Global</h1>
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="px-4 py-2 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg text-sm font-semibold hover:bg-white/50 transition disabled:opacity-50"
           >
-            <img
-              src={`https://flagsapi.com/${airline.countryCode}/flat/32.png`}
-              alt={airline.country}
-              className="rounded"
-              loading="lazy"
-            />
-            <div>
-              <h3 className="font-semibold text-lg">{airline.callsign}</h3>
-              <p className="text-sm text-gray-600">
-                {airline.name} - {airline.country}
-              </p>
-            </div>
-          </div>
-        ))}
+            {loading ? "Actualizando..." : "Actualizar"}
+          </button>
+        </header>
+
+        <div className="text-sm text-neutral-600">
+          Última actualización: {lastUpdated ? lastUpdated.toLocaleTimeString() : "..."}
+        </div>
         
-        {loading && (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <AirlineSkeleton key={`skeleton-${i}`} />
-            ))}
+        {error && (
+          <div className="p-4 rounded-xl bg-red-100 text-red-800 border border-red-300">
+            {error}
           </div>
         )}
-        
-        {!hasMore && !loading && airlines.length > 0 && (
-          <div className="text-center py-4 text-gray-500">
-            You've reached the end of the list
-          </div>
+
+        {loading && !airlines.length ? (
+          <p className="text-center text-neutral-500 py-16">Cargando datos...</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              {[
+                { label: "Vuelos activos", value: stats.total },
+                { label: "Aerolínea más activa", value: stats.top },
+                { label: "Vuelos de esa aerolínea", value: stats.topCount },
+              ].map((card, i) => (
+                <div key={i} className="rounded-3xl p-6 bg-white/40 backdrop-blur-2xl border border-white/50 shadow-xl">
+                  <p className="text-sm text-neutral-600">{card.label}</p>
+                  <p className="text-3xl font-bold mt-2">{card.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="rounded-3xl p-6 bg-white/40 backdrop-blur-2xl border border-white/50 shadow-xl h-[380px] flex flex-col">
+                <h3 className="text-lg font-semibold mb-4 text-center">Top 10 Aerolíneas (Total)</h3>
+                <div className="h-[300px] flex-grow">
+                  <ManualBarChart data={airlines} />
+                </div>
+              </div>
+              <div className="rounded-3xl p-6 bg-white/40 backdrop-blur-2xl border border-white/50 shadow-xl h-[380px] flex flex-col">
+                <h3 className="text-lg font-semibold mb-2 text-center">Actividad de Flota (Top 10)</h3>
+                <div className="h-[300px] flex-grow">
+                  <ManualStackedBarChart data={airlines} />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="rounded-3xl p-6 bg-white/40 backdrop-blur-2xl border border-white/50 shadow-xl h-[380px] flex flex-col">
+                <h3 className="text-lg font-semibold mb-4 text-center">Perfil de Vuelo (Altitud Media)</h3>
+                <div className="h-[300px] flex-grow">
+                  <AltitudeChart data={airlines} />
+                </div>
+              </div>
+              <div className="rounded-3xl p-6 bg-white/40 backdrop-blur-2xl border border-white/50 shadow-xl h-[380px] flex flex-col">
+                <h3 className="text-lg font-semibold mb-2 text-center">Fases de Vuelo (Flota en Aire)</h3>
+                <div className="h-[300px] flex-grow">
+                  <FlightPhaseChart data={airlines} />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl p-6 bg-white/40 backdrop-blur-2xl border border-white/50 shadow-xl h-[550px]">
+              <h3 className="text-lg font-semibold mb-4">Mapa de Tráfico Aéreo (Vuelos en Aire)</h3>
+              <div className="h-[480px] rounded-xl overflow-hidden">
+                <Canvas camera={{ position: [0, 0, 2.5], fov: 75 }}>
+                  <Globe3D positions={positions} />
+                  <OrbitControls enableZoom={true} enablePan={false} />
+                </Canvas>
+              </div>
+            </div>
+          </>
         )}
       </div>
-      
-      <BackToTop />
     </div>
   );
-};
-
-export default AirlinesData;
+}
