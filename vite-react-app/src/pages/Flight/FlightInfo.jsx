@@ -66,10 +66,16 @@ function FlightInfo() {
         Registration: "",
         Type: "",
     });
+
+
     const [planeImgSrc, setPlaneImgSrc] = useState(null);
     const [liveData, setLiveData] = useState(null);
     const [origin, setOrigin] = useState("Unknown");
     const [destination, setDestination] = useState("Unknown");
+    // ⬇ NUEVOS ESTADOS PARA EL ML ⬇
+    const [delayPrediction, setDelayPrediction] = useState(null);
+    const [predictionError, setPredictionError] = useState(null);
+    // ⬆ FIN NUEVOS ESTADOS ⬆
     const [originData, setOriginData] = useState({
         airport: "Unknown",
         country_code: "N/A",
@@ -92,7 +98,49 @@ function FlightInfo() {
     const fetchurl0 = `https://hexdb.io/hex-image-thumb?hex=${icao}`;
     const fetchurl1 = `https://hexdb.io/api/v1/aircraft/${icao}`;
     const fetchurl2 = `https://opensky-network.org/api/states/all?icao24=${icao}`;
+// ⬇️ FUNCIÓN CRÍTICA: LLAMAR AL BACKEND DE PREDICCIÓN ⬇️
+    const fetchPrediction = async (liveState) => {
+        const state = liveState?.states?.[0];
+        
+        // Verifica si la predicción es necesaria y si hay datos mínimos
+        if (!state || state[9] === null || state[6] === null) {
+            setPredictionError("Datos cinemáticos insuficientes.");
+            setDelayPrediction(null);
+            return;
+        }
+        
+        // Mapeo de índices de OpenSky a las Features esperadas por el script Python
+  const rawFeatures = {
+    icao24: state[0],
+    velocity: state[9],
+    baro_altitude: state[7],
+    geo_altitude: state[6],
+    heading: state[10],
+    vertrate: state[11] != null ? state[11] : (state[8] ? 0 : 1), // ⬅ valor neutro si falta
+    latitude: state[6],
+    longitude: state[5],
+    phase: state[8] ? 'ground' : 'air',
+    hour: new Date(state[4] * 1000).getHours(),
+    time_position: state[4]
+};
 
+
+        try {
+            setPredictionError(null);
+            // Llama al endpoint de Laravel/Python
+            const response = await api.post('/predict-delay', { 
+                features: rawFeatures
+            });
+
+            console.log("Prediction response:", response.data);
+setDelayPrediction(response.data);
+        } catch (error) {
+            console.error("Fallo de predicción:", error);
+            setPredictionError("Fallo de conexión al motor ML.");
+            setDelayPrediction(null);
+        }
+    };
+    // ⬆️ FIN DE LA FUNCIÓN DE PREDICCIÓN ⬆️
     useEffect(() => {
         if (!icao) return;
 
@@ -125,6 +173,8 @@ function FlightInfo() {
                     }
                     setLiveData(data);
                     updateRouteInfo(data.states[0][1]);
+
+                    fetchPrediction(data); //llamada 
                 })
                 .catch(() => setDefaultLiveData());
         };
@@ -404,6 +454,47 @@ function FlightInfo() {
                                 {Math.round((liveData?.states[0][9] * 18) / 5)} km/h
                             </div>
                         </div>
+{/* ⬇️ NUEVA SECCIÓN DE PREDICCIÓN DETALLADA ⬇️ */}
+{delayPrediction && !predictionError && (
+    <div className="prediction-details">
+        <h3>Delay Prediction</h3>
+        <div className="stat-item">
+            <div className="stat-label">Estimated Delay</div>
+            <div className={`stat-value delay-value ${delayPrediction.estimated_delay_minutes > 10 ? 'high-risk' : 'low-risk'}`}>
+                {delayPrediction.estimated_delay_minutes != null ? Math.min(delayPrediction.estimated_delay_minutes, 180) : "N/A"} min
+            </div>
+        </div>
+        <div className="stat-item">
+            <div className="stat-label">Risk Score</div>
+            <div className="stat-value">
+                {delayPrediction.predicted_risk_score != null ? Math.round(delayPrediction.predicted_risk_score) : "N/A"}
+            </div>
+        </div>
+        <div className="stat-item">
+            <div className="stat-label">Risk Level</div>
+            <div className={`stat-value risk-level ${
+                delayPrediction.predicted_risk_score != null 
+                    ? (delayPrediction.predicted_risk_score < 10 ? 'low' :
+                       delayPrediction.predicted_risk_score < 50 ? 'medium' : 'high')
+                    : ''
+            }`}>
+                {delayPrediction.predicted_risk_score != null
+                    ? (delayPrediction.predicted_risk_score < 10 ? 'Low' :
+                       delayPrediction.predicted_risk_score < 50 ? 'Medium' : 'High')
+                    : "N/A"
+                }
+            </div>
+        </div>
+    </div>
+)}
+{predictionError && (
+    <div className="stat-item">
+        <div className="stat-label">Prediction Status</div>
+        <div className="stat-value prediction-error">Error: {predictionError}</div>
+    </div>
+)}
+{/* ⬆️ FIN SECCIÓN DE PREDICCIÓN DETALLADA ⬆️ */}
+
                     </div>
 
                     <div className="aircraft-info">
