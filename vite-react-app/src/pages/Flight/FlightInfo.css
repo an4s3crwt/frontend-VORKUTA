@@ -331,3 +331,286 @@
     background-color: #fff3cd;
     border-left: 5px solid #ffc107;
 }
+
+/* Contenedor de la tarjeta */
+.prediction-card {
+    grid-column: 1 / -1; /* Ocupa todo el ancho en el grid de stats */
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    border-left: 5px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+}
+
+.prediction-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Estados de Color (Semántica) */
+.prediction-card.on-time {
+    border-left-color: #2ecc71; /* Verde esmeralda */
+    background: linear-gradient(to right, #f0fff4, #ffffff);
+}
+
+.prediction-card.moderate-delay {
+    border-left-color: #f1c40f; /* Amarillo */
+    background: linear-gradient(to right, #fffcf0, #ffffff);
+}
+
+.prediction-card.severe-delay {
+    border-left-color: #e74c3c; /* Rojo */
+    background: linear-gradient(to right, #fff0f0, #ffffff);
+}
+
+.prediction-card.loading-state {
+    border-left-color: #3498db;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #666;
+}
+
+.prediction-card.error-state {
+    border-left-color: #95a5a6;
+    color: #7f8c8d;
+}
+
+/* Cabecera de la tarjeta */
+.prediction-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    font-weight: 600;
+}
+
+/* Cuerpo de la tarjeta */
+.prediction-body {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-icon {
+    font-size: 2rem;
+}
+
+.on-time .status-icon { color: #2ecc71; }
+.moderate-delay .status-icon { color: #f1c40f; }
+.severe-delay .status-icon { color: #e74c3c; }
+
+.status-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-main {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.status-sub {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+/* FlightInfo.css */
+
+.refresh-card-btn {
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: inherit;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.refresh-card-btn:hover {
+    background: rgba(255,255,255,0.5);
+    transform: scale(1.05);
+}
+
+.refresh-card-btn:active {
+    transform: scale(0.95);
+}
+
+.prediction-meta {
+    font-size: 0.65rem;
+    color: #666;
+    margin-bottom: 8px;
+    text-align: right;
+    font-family: monospace;
+}
+
+/* Barra de Probabilidad estilo "Data Science" */
+.probability-bar-bg {
+    width: 100%;
+    height: 4px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.probability-bar-fill {
+    height: 100%;
+    background: currentColor; /* Usa el color del texto actual (verde/rojo) */
+    transition: width 0.5s ease-out;
+}
+
+.prob-text {
+    font-size: 0.65rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.prediction-card.scheduled-state {
+    border-left-color: #3498db; /* Azul Profesional */
+    background: linear-gradient(to right, #f0f8ff, #ffffff);
+    color: #2c3e50;
+}
+
+.scheduled-state .status-icon { 
+    color: #3498db; 
+}
+
+.scheduled-state .probability-bar-fill {
+    background-color: #3498db;
+}
+
+/* --- ESTILOS CUTE PARA POPUPS DE LEAFLET --- */
+
+/* 1. El contenedor principal del popup */
+.leaflet-popup-content-wrapper {
+    border-radius: 18px !important; /* Bordes MUY redondos */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important; /* Sombra suave y profunda */
+    background: rgba(255, 255, 255, 0.98) !important; /* Blanco casi opaco */
+    border: 1px solid rgba(243, 244, 246, 0.8); /* Borde sutil */
+    padding: 0 !important; /* Quitamos padding por defecto para controlarlo nosotros */
+    overflow: hidden;
+}
+
+/* 2. El triangulito (la punta) de abajo */
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 3. El contenido interno */
+.leaflet-popup-content {
+    margin: 0 !important; /* Reseteamos margen */
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #374151; /* Gris suave */
+    line-height: 1.5;
+}
+
+/* 4. El botón de cerrar 'X' (Hacerlo redondito) */
+.leaflet-popup-close-button {
+    top: 8px !important;
+    right: 8px !important;
+    border-radius: 50%;
+    background: #f3f4f6 !important;
+    color: #9ca3af !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px !important;
+    font-weight: bold;
+    border: 1px solid #e5e7eb !important;
+    transition: all 0.2s ease;
+}
+.leaflet-popup-close-button:hover {
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+    transform: scale(1.05);
+}
+
+
+/* --- CLASES INTERNAS PARA NUESTRO JSX --- */
+/* --- ESTILOS CUTE PARA POPUPS DE LEAFLET --- */
+
+.leaflet-popup-content-wrapper {
+    border-radius: 18px !important; 
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    background: rgba(255, 255, 255, 0.98) !important; 
+    padding: 0 !important; 
+    overflow: hidden;
+}
+
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important; 
+    font-family: ui-sans-serif, system-ui;
+    color: #374151; 
+    line-height: 1.5;
+}
+
+/* --- CLASES INTERNAS PARA NUESTRO JSX --- */
+
+.cute-popup-airport {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: #d97706; 
+    font-size: 0.95rem;
+    background: linear-gradient(to right, #fffbeb, #fff);
+}
+
+.cute-popup-plane {
+    padding: 12px 16px;
+}
+
+.cute-plane-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f3f4f6;
+}
+.cute-plane-header i {
+    color: #3b82f6; 
+}
+
+.cute-plane-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-family: 'ui-monospace', monospace;
+}
+
+.cute-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f9fafb;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #f3f4f6;
+}
+.cute-stat i {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}

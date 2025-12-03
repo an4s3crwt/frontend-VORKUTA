@@ -19,19 +19,19 @@ const Data = () => {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto transition-all duration-500">
-    
-       
+    <div className="w-full px-4 sm:px-6 lg:px-8 mx-auto transition-all duration-500">
 
       {/* Tabs */}
-      <div className="flex justify-center mb-10">
-        <div className="flex bg-white/60 dark:bg-neutral-900/70 backdrop-blur-2xl border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] p-1 transition-all duration-300">
+      <div className="flex justify-center mb-8 sm:mb-10">
+        <div className="flex bg-white/60 dark:bg-neutral-900/70 backdrop-blur-2xl 
+                        border border-gray-200 dark:border-neutral-800 rounded-2xl 
+                        shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] p-1 transition-all duration-300">
           {tabs.map((tab) => (
             <Link
               key={tab.path}
               to={`/data/${tab.path}`}
               className={`
-                relative px-6 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
+                relative px-4 sm:px-6 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
                 ${
                   activeTab === tab.path
                     ? "bg-black text-white shadow-md scale-[1.03]"
@@ -49,9 +49,13 @@ const Data = () => {
       </div>
 
       {/* Contenido */}
-      <div className="bg-white/60 dark:bg-neutral-900/70 backdrop-blur-2xl rounded-3xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] p-8 transition-all duration-500 border border-gray-100 dark:border-neutral-800">
+      <div className="w-full bg-white/60 dark:bg-neutral-900/70 
+                      backdrop-blur-2xl rounded-3xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] 
+                      p-4 sm:p-6 lg:p-8 transition-all duration-500 
+                      border border-gray-100 dark:border-neutral-800">
         <Outlet />
       </div>
+
     </div>
   );
 };

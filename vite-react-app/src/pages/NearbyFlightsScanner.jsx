@@ -1,369 +1,322 @@
-import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
+import React, { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
 import L from 'leaflet';
-import 'leaflet-rotatedmarker';
 import "leaflet/dist/leaflet.css";
-import  api  from './../api';
+import api from '../api';
+import { useNavigate, useParams } from 'react-router-dom'; // 👈 Importamos useParams
 
-// Custom radar station icon (BOLD VERSION)
-const radarIcon = new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="%2300ff00" stroke-width="3"/><circle cx="12" cy="12" r="6" fill="none" stroke="%2300ff00" stroke-width="3"/><circle cx="12" cy="12" r="2" fill="%2300ff00"/><line x1="12" y1="2" x2="12" y2="6" stroke="%2300ff00" stroke-width="3"/></svg>',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14]
-});
-
-// BOLD plane icons
-const createPlaneIcon = (color, heading) => {
+// --- CONFIGURACIÓN DE ICONOS ---
+const getPlaneIcon = (heading) => {
+    const safeHeading = heading || 0;
+    let snap = Math.round(safeHeading / 45) * 45;
+    if (snap === 360) snap = 0;
     return new L.Icon({
-        iconUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}"><path d="M22,16.21V14l-8-5V3.5c0-0.83-0.67-1.5-1.5-1.5S11,2.67,11,3.5V9l-8,5v2.21l8-2.81V19l-2,1.5V22l3.5-1l3.5,1v-1.5L14,19v-5.62L22,16.21z" stroke="black" stroke-width="0.5"/></svg>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        rotationAngle: heading || 0
+        iconUrl: `/directions/d${snap}.png`, 
+        iconSize: [25, 25], 
+        iconAnchor: [12.5, 12.5],
+        popupAnchor: [0, -12.5],
     });
 };
 
-// Custom Ellipse component
-const Ellipse = ({ center, radii, rotation, ...props }) => {
-    const ref = useRef();
+const userIcon = new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png',
+    iconSize: [36, 36],
+    iconAnchor: [18, 36],
+    popupAnchor: [0, -36]
+});
 
+// Controlador de Zoom Automático
+function AutoMapController({ lat, lon, radius }) {
+    const map = useMap();
     useEffect(() => {
-        if (ref.current) {
-            ref.current.setLatLng(center);
-            ref.current.setRadius(Math.max(...radii));
-            ref.current.setStyle({
-                ...props,
-                transform: `rotate(${rotation}deg) scaleX(${radii[0] / radii[1]})`
-            });
-        }
-    }, [center, radii, rotation, props]);
+        if (!lat || !lon) return;
+        let targetZoom = 9; 
+        if (radius >= 200) targetZoom = 8;
+        if (radius >= 500) targetZoom = 6;
+        if (radius >= 1000) targetZoom = 5;
 
-    return <Circle center={center} radius={1} ref={ref} {...props} />;
-};
+        map.setView([lat, lon], targetZoom);
+    }, [lat, lon, radius, map]);
+    return null;
+}
 
-function NearbyFlightsScanner() {
+export default function NearbyFlightsScanner() {
+    const { radius } = useParams(); // 👈 LEEMOS EL RADIO DE LA URL
+    const navigate = useNavigate();
+    
+    // Estado inicial basado en la URL (Si hay radio en URL, lo usamos, si no, null)
+    const initialRadius = radius ? parseInt(radius) : 100;
+    const [isMapActive, setIsMapActive] = useState(!!radius); // Si hay radio en URL, mostramos mapa directo
+
     const [location, setLocation] = useState(null);
     const [flights, setFlights] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [scanAngle, setScanAngle] = useState(0);
-    const [alert, setAlert] = useState(null);
-    const mapRef = useRef(null);
-    const radarBeamRef = useRef(null);
-    const audioRef = useRef(null);
+    const [scanRadius, setScanRadius] = useState(initialRadius); 
 
-    // Elliptical radar animation
+    // === 1. EFECTO DE INICIO (Si entras con URL directa) ===
     useEffect(() => {
-        const interval = setInterval(() => {
-            setScanAngle(prev => (prev + 1.5) % 360);
-        }, 30);
-        return () => clearInterval(interval);
-    }, []);
+        // Si la URL tiene radio (ej: /scanner/300), iniciamos escaneo automático
+        if (radius) {
+            setIsMapActive(true);
+            setScanRadius(parseInt(radius));
+            // Iniciamos GPS automáticamente
+            startGpsSequence(parseInt(radius));
+        }
+    }, [radius]); // Se ejecuta al cambiar la URL
 
-    // Elliptical radar beam
-    useEffect(() => {
-        if (!mapRef.current || !location) return;
+    // === 2. SECUENCIA GPS Y FETCH ===
+    const startGpsSequence = (radiusToScan) => {
+        setLoading(true);
+        setError(null);
 
-        if (radarBeamRef.current) {
-            mapRef.current.removeLayer(radarBeamRef.current);
+        if (!navigator.geolocation) {
+            setError("Browser not supported.");
+            setLoading(false);
+            return;
         }
 
-        const a = 0.6; // Semi-major axis
-        const b = 0.3; // Semi-minor axis
-        const angleRad = scanAngle * Math.PI / 180;
-
-        const beam = L.polygon([
-            [location.lat, location.lon],
-            [
-                location.lat + a * Math.cos(angleRad - 0.15),
-                location.lon + b * Math.sin(angleRad - 0.15)
-            ],
-            [
-                location.lat + a * Math.cos(angleRad + 0.15),
-                location.lon + b * Math.sin(angleRad + 0.15)
-            ]
-        ], {
-            color: '#00ff00',
-            fillColor: 'rgba(0, 255, 0, 0.3)',
-            weight: 2,
-            opacity: 0.8
-        }).addTo(mapRef.current);
-
-        radarBeamRef.current = beam;
-
-        return () => {
-            if (radarBeamRef.current) {
-                mapRef.current.removeLayer(radarBeamRef.current);
-            }
-        };
-    }, [scanAngle, location]);
-
-    // Get user location and fetch flights
-    useEffect(() => {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const coords = {
-                    lat: pos.coords.latitude,
-                    lon: pos.coords.longitude,
-                };
+                const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
                 setLocation(coords);
-                fetchNearbyFlights(coords.lat, coords.lon);
+                fetchNearbyFlights(coords.lat, coords.lon, radiusToScan);
             },
-            (err) => setError("Error getting location: " + err.message)
+            (err) => {
+                setLoading(false);
+                setError("⚠️ Access denied. Please enable GPS.");
+            },
+            { enableHighAccuracy: true }
         );
+    };
 
-        audioRef.current = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-sonar-sweep-1494.mp3');
-        audioRef.current.loop = true;
-        audioRef.current.volume = 0.3;
-        audioRef.current.play();
+    // === 3. FUNCIÓN DE INICIO MANUAL (Botón "Start Radar") ===
+    const handleStartClick = () => {
+        // Cambiamos la URL. Esto disparará el useEffect de arriba o cambiará la vista.
+        navigate(`/scanner/${scanRadius}`);
+        setIsMapActive(true);
+        startGpsSequence(scanRadius);
+    };
 
-        return () => {
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
-            }
-        };
-    }, []);
-
-    const fetchNearbyFlights = async (lat, lon) => {
+    // === 4. FETCH API ===
+    const fetchNearbyFlights = async (lat, lon, r) => {
+        setLoading(true);
         try {
             const res = await api.get("/flights/nearby", {
-                params: { lat, lon, radius: 100 },
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`
-                }
+                params: { lat, lon, radius: r } 
             });
-
-            const processedFlights = res.data.nearby_flights.map(flight => {
-                const distance = flight[flight.length - 1];
-                return [...flight, distance];
-            });
-
-            setFlights(processedFlights);
-            checkForProximityAlerts(processedFlights);
+            setFlights(res.data.nearby_flights || []);
         } catch (e) {
             console.error(e);
-            setError(e.response?.data?.message || "Failed to fetch flights");
+            setError("Connection failed.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    const checkForProximityAlerts = (flights) => {
-        if (flights.length === 0) return;
-
-        const closestFlight = flights.reduce((closest, flight) => {
-            const distance = flight[flight.length - 1];
-            return distance < closest.distance ? { distance, flight } : closest;
-        }, { distance: Infinity, flight: null });
-
-        if (closestFlight.distance < 10) {
-            setAlert({
-                level: 'danger',
-                message: `WARNING! Flight ${closestFlight.flight[1]?.trim()} is ${closestFlight.distance.toFixed(1)} km away!`
-            });
-            playAlertSound('danger');
-        } else if (closestFlight.distance < 30) {
-            setAlert({
-                level: 'warning',
-                message: `Flight ${closestFlight.flight[1]?.trim()} approaching (${closestFlight.distance.toFixed(1)} km)`
-            });
-            playAlertSound('warning');
-        } else {
-            setAlert(null);
+    // === 5. CAMBIO DE RADIO (Combobox) ===
+    const handleRadiusChange = (e) => {
+        const newRadius = parseInt(e.target.value);
+        setScanRadius(newRadius);
+        
+        // 🚀 AL CAMBIAR RADIO, CAMBIAMOS URL
+        navigate(`/scanner/${newRadius}`); 
+        
+        // Si ya tenemos ubicación, refrescamos datos
+        if (location) {
+            fetchNearbyFlights(location.lat, location.lon, newRadius);
         }
     };
 
-    const playAlertSound = (type) => {
-        const sound = new Audio(
-            type === 'danger'
-                ? 'https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3'
-                : 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-positive-interface-beep-158.mp3'
-        );
-        sound.volume = 0.5;
-        sound.play();
+    // === MEMORIA PARA IR AL DETALLE Y VOLVER ===
+    const handleFlightClick = (icao) => {
+        // Guardamos estado antes de irnos (opcional si confías en la URL)
+        // Pero la URL no guarda la Lat/Lon exacta, así que SessionStorage sigue siendo útil para velocidad
+        const stateToSave = { location, flights, radius: scanRadius };
+        sessionStorage.setItem('scannerState', JSON.stringify(stateToSave));
+        navigate(`/airport/${icao}`);
     };
+    
+    // Restaurar sesión al volver (si no hay URL params que manden)
+    useEffect(() => {
+        if (!radius) { // Solo si estamos en /scanner base
+            const savedState = sessionStorage.getItem('scannerState');
+            if (savedState) {
+                try {
+                    const parsed = JSON.parse(savedState);
+                    if (parsed.radius) {
+                        // Si hay memoria, restauramos URL
+                        navigate(`/scanner/${parsed.radius}`);
+                    }
+                } catch(e) {}
+            }
+        }
+    }, []);
 
-    return (
-        <div className="p-4 bg-black text-green-400 font-mono" style={{ textShadow: '0 0 5px #00ff00' }}>
-            <h2 className="text-3xl font-extrabold mb-4 border-b-2 border-green-400 pb-2 tracking-wider">
-                <span className="text-green-300">CHEMISNATION</span> | <span className="text-green-200">RICO PLANET</span>
-            </h2>
-            <h3 className="text-xl font-bold mb-6 text-green-300">
-                LOCATIONS | CLUTTER CHRIST
-            </h3>
 
-            {error && (
-                <div className="bg-red-900/50 border-l-4 border-red-500 p-3 mb-4">
-                    {error}
+    // ============================================================
+    // VISTA 1: LANDING PAGE (/scanner)
+    // ============================================================
+    if (!isMapActive && !radius) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900 p-4">
+                <div className="bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-xl max-w-lg w-full border border-gray-100 dark:border-gray-700 text-center transition-all hover:shadow-2xl">
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                        <div className="absolute inset-0 bg-blue-100 dark:bg-blue-900/30 rounded-full animate-ping opacity-75"></div>
+                        <div className="relative w-24 h-24 bg-blue-50 dark:bg-blue-900/50 rounded-full flex items-center justify-center border border-blue-100 dark:border-blue-800">
+                            <i className="fa fa-location-arrow text-4xl text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                    </div>
+                    
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Local Airspace</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+                        Scan your surroundings for active flights using your current GPS location.
+                    </p>
+
+                    <div className="mb-6 text-left">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Scanning Range</label>
+                        <div className="relative">
+                            <select 
+                                value={scanRadius} 
+                                onChange={(e) => setScanRadius(Number(e.target.value))}
+                                className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white font-medium appearance-none focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer transition"
+                            >
+                                <option value="50">50 km (City)</option>
+                                <option value="100">100 km (Local)</option>
+                                <option value="300">300 km (Regional)</option>
+                                <option value="500">500 km (Wide)</option>
+                                <option value="1000">1000 km (National)</option>
+                            </select>
+                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500">
+                                <i className="fa fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-xl text-sm font-medium border border-red-100 dark:border-red-800 flex items-center gap-3 text-left"><i className="fa fa-exclamation-circle text-xl"></i>{error}</div>}
+
+                    <button 
+                        onClick={handleStartClick}
+                        disabled={loading}
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 dark:shadow-none transition-all transform active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <><i className="fa fa-circle-o-notch fa-spin"></i> Processing...</> : <><i className="fa fa-radar"></i> Activate Radar</>}
+                    </button>
+                    
+                    <p className="mt-6 text-xs text-gray-400"><i className="fa fa-lock mr-1"></i> Location data is only used locally.</p>
                 </div>
-            )}
+            </div>
+        );
+    }
 
-            {alert && (
-                <div className={`p-3 mb-4 border-l-4 ${alert.level === 'danger'
-                        ? 'bg-red-900/30 border-red-500 text-red-100'
-                        : 'bg-yellow-900/30 border-yellow-500 text-yellow-100'
-                    }`}>
-                    <div className="flex items-center">
-                        <span className="mr-2">🚨</span>
-                        <span>{alert.message}</span>
+    // ============================================================
+    // VISTA 2: MAPA ACTIVO (/scanner/:radius)
+    // ============================================================
+    return (
+        <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900">
+            <div className="bg-white dark:bg-gray-800 p-3 shadow-sm border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3 z-10">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-500'}`}></div>
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Live Radar</h1>
+                        <p className="text-[10px] text-gray-500 font-mono mt-0.5">{flights.length} TARGETS • {scanRadius} KM</p>
                     </div>
                 </div>
-            )}
 
-            {location && (
-                <div className="relative">
-                    <MapContainer
-                        center={[location.lat, location.lon]}
-                        zoom={9}
-                        style={{ height: "600px", width: "100%", marginBottom: "20px" }}
-                        whenCreated={map => mapRef.current = map}
-                        className="radar-screen"
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <select 
+                        value={scanRadius}
+                        onChange={handleRadiusChange}
+                        className="flex-1 sm:flex-none bg-gray-100 dark:bg-gray-700 border-none rounded-lg px-3 py-2 text-sm font-bold text-gray-700 dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition outline-none"
                     >
-                        <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            className="radar-tiles"
-                        />
+                        <option value="50">50 KM</option>
+                        <option value="100">100 KM</option>
+                        <option value="300">300 KM</option>
+                        <option value="500">500 KM</option>
+                        <option value="1000">1000 KM</option>
+                    </select>
 
-                        {/* Elliptical range indicators */}
-                        {[1.2, 0.8, 0.4].map((scale, i) => (
-                            <Ellipse
-                                key={i}
-                                center={[location.lat, location.lon]}
-                                radii={[scale * 0.6 * 100000, scale * 0.3 * 100000]}
-                                rotation={scanAngle}
-                                color="rgba(0, 255, 0, 0.2)"
-                                weight={1}
-                            />
-                        ))}
+                    <button 
+                        onClick={() => location && fetchNearbyFlights(location.lat, location.lon, scanRadius)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition shadow-sm"
+                    >
+                        <i className={`fa fa-refresh ${loading ? 'fa-spin' : ''}`}></i>
+                    </button>
+                </div>
+            </div>
 
-                        {/* Radar station marker */}
-                        <Marker position={[location.lat, location.lon]} icon={radarIcon}>
-                            <Popup className="radar-popup">RADAR STATION</Popup>
-                        </Marker>
-
-                        {/* Flight markers */}
-                        {flights.map((flight, idx) => {
-                            const lat = flight[6];
-                            const lon = flight[5];
-                            if (lat === null || lon === null) return null;
-
-                            const distance = flight[flight.length - 1];
-                            const alertLevel = distance < 20 ? 'red' : distance < 50 ? 'orange' : 'green';
-                            const heading = flight[10] || 0;
-
-                            return (
-                                <Marker
-                                    key={idx}
-                                    position={[lat, lon]}
-                                    icon={createPlaneIcon(
-                                        alertLevel === 'red' ? '#ff0000' :
-                                            alertLevel === 'orange' ? '#ff8000' : '#00ff00',
-                                        heading
-                                    )}
-                                   
-                                >
-                                    <Popup className={`radar-popup ${alertLevel}`}>
-                                        <div className="text-sm">
-                                            <div className="flex justify-between">
-                                                <strong>{flight[1]?.trim() || "UNKNOWN"}</strong>
-                                                <span>{distance.toFixed(1)} km</span>
+            <div className="flex-1 flex flex-col md:flex-row relative overflow-hidden">
+                <div className="w-full md:w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto z-20 shadow-xl">
+                    {flights.length === 0 ? (
+                        <div className="p-10 text-center text-gray-500 flex flex-col items-center justify-center h-full">
+                            {loading ? (
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                            ) : (
+                                <>
+                                    <i className="fa fa-search text-4xl mb-3 text-gray-300"></i>
+                                    <p>No flights in {scanRadius}km.</p>
+                                    <p className="text-xs mt-2 text-blue-500">Try increasing the radius ↗</p>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {flights.map((flight, idx) => {
+                                const dist = flight[flight.length - 1];
+                                return (
+                                    <div 
+                                        key={idx} 
+                                        onClick={() => handleFlightClick(flight[0])} 
+                                        className="p-4 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer transition flex justify-between items-center group"
+                                    >
+                                        <div>
+                                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">{flight[1]?.trim() || "UNK"}</h3>
+                                            <p className="text-xs text-gray-500 font-mono">{flight[2]}</p>
+                                            <div className="flex gap-3 mt-1 text-xs font-mono text-gray-500">
+                                                <span><i className="fa fa-arrow-up"></i> {Math.round(flight[7] * 3.28)}ft</span>
+                                                <span><i className="fa fa-tachometer"></i> {Math.round(flight[9]*3.6)}km/h</span>
                                             </div>
-                                            <div>ALT: {Math.round(flight[7])} m</div>
-                                            <div>SPD: {Math.round(flight[9])} km/h</div>
-                                            <div>HDG: {heading}°</div>
-                                            <div>ORG: {flight[2]}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                                {dist.toFixed(0)} km
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex-1 relative bg-gray-100">
+                    {location && (
+                        <MapContainer center={[location.lat, location.lon]} zoom={9} style={{ height: "100%", width: "100%" }}>
+                            <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                            <AutoMapController lat={location.lat} lon={location.lon} radius={scanRadius} />
+                            <Circle center={[location.lat, location.lon]} radius={scanRadius * 1000} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.05, dashArray: '10, 10', weight: 1 }} />
+                            <Marker position={[location.lat, location.lon]} icon={userIcon}>
+                                <Popup><div className="text-center font-bold">YOU</div></Popup>
+                            </Marker>
+                            {flights.map((flight, idx) => (
+                                <Marker 
+                                    key={idx} 
+                                    position={[flight[6], flight[5]]} 
+                                    icon={getPlaneIcon(flight[10])}
+                                    eventHandlers={{ click: () => handleFlightClick(flight[0]) }}
+                                >
+                                    <Popup>
+                                        <div className="text-center font-sans">
+                                            <strong>{flight[1]?.trim()}</strong><br/>
+                                            {Math.round(flight[7]*3.28)} ft
                                         </div>
                                     </Popup>
                                 </Marker>
-                            );
-                        })}
-                    </MapContainer>
-
-                    {/* Enhanced elliptical scan effect */}
-                    <div
-                        className="radar-scan-overlay"
-                        style={{
-                            background: `radial-gradient(ellipse at center, 
-                transparent 0%, 
-                rgba(0, 255, 0, 0.05) 30%,
-                transparent 70%)`,
-                          
-                        }}
-                    />
+                            ))}
+                        </MapContainer>
+                    )}
                 </div>
-            )}
-
-            {/* Flight data table */}
-            <div className="overflow-x-auto">
-                <table className="w-full border border-green-400">
-                    <thead>
-                        <tr className="bg-green-900/50">
-                            <th className="p-2 border border-green-400">Callsign</th>
-                            <th className="p-2 border border-green-400">Country</th>
-                            <th className="p-2 border border-green-400">Altitude</th>
-                            <th className="p-2 border border-green-400">Speed</th>
-                            <th className="p-2 border border-green-400">Heading</th>
-                            <th className="p-2 border border-green-400">Distance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {flights.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" className="p-2 text-center">No flights detected</td>
-                            </tr>
-                        ) : (
-                            flights.map((flight, idx) => (
-                                <tr key={idx} className="hover:bg-green-900/10">
-                                    <td className="p-2 border border-green-400">{flight[1]?.trim()}</td>
-                                    <td className="p-2 border border-green-400">{flight[2]}</td>
-                                    <td className="p-2 border border-green-400">{Math.round(flight[7])} m</td>
-                                    <td className="p-2 border border-green-400">{Math.round(flight[9])} km/h</td>
-                                    <td className="p-2 border border-green-400">{flight[10] || 0}°</td>
-                                    <td className="p-2 border border-green-400">{flight[flight.length - 1]?.toFixed(2)} km</td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
             </div>
-
-            {/* CSS styles */}
-            <style jsx>{`
-        .radar-screen {
-          background-color: #000;
-          border: 3px solid #00ff00;
-          box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
-        }
-        .radar-tiles {
-          filter: grayscale(100%) contrast(150%) brightness(0.5) hue-rotate(90deg);
-        }
-        .radar-popup {
-          background: #111;
-          color: #0f0;
-          border: 2px solid #0f0;
-          font-family: 'Courier New', monospace;
-          font-weight: bold;
-          text-shadow: 0 0 3px #00ff00;
-        }
-        .radar-popup.red {
-          border-color: #f00;
-          color: #f00;
-        }
-        .radar-popup.orange {
-          border-color: #ff8000;
-          color: #ff8000;
-        }
-        .radar-scan-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          pointer-events: none;
-          z-index: 1000;
-          mix-blend-mode: screen;
-          transform-origin: center;
-        }
-      `}</style>
         </div>
     );
 }
-
-export default NearbyFlightsScanner;

@@ -62,14 +62,14 @@ export default function App() {
 
           </Route>
 
-  <Route
-              path="airport/:iata"
-              element={
-                <ErrorBoundary>
-                  <AirportFlights />
-                </ErrorBoundary>
-              }
-            />
+<Route 
+            path="airport/:icao" 
+            element={
+              <ErrorBoundary>
+                <FlightInfo /> {/* <--- Debe ser FlightInfo, no AirportFlights */}
+              </ErrorBoundary>
+            } 
+          />
           {/* Flight routes */}
           <Route
             path="flights"
@@ -97,15 +97,11 @@ export default function App() {
           />
 
           {/* Nearby flights */}
-          <Route
-            path="scanner"
-            element={
-              <ErrorBoundary>
-                <NearbyFlightsScanner />
-              </ErrorBoundary>
-            }
-          />
-
+         <Route path="scanner/:radius?" element={
+  <ErrorBoundary>
+    <NearbyFlightsScanner />
+  </ErrorBoundary>
+} />
           {/* User */}
           <Route
             path="profile"
