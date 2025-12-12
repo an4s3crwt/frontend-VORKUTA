@@ -51,9 +51,9 @@ export default function NotFound() {
   }, []);
 
   // -------------------------------------------------------
-  // DISEÑO VISUAL — BLANCO Y NEGRO / MINIMALISTA
+  // DISEÑO VISUAL
   // -------------------------------------------------------
-  // No hay colores, no hay sombras, solo contraste puro.
+
   return (
     <div
       className="flex flex-col justify-center items-center min-h-screen text-center transition-all"
@@ -98,7 +98,7 @@ export default function NotFound() {
         Please return to the home page.
       </p>
 
-      {/* Botón simple estilo brutalist */}
+      {/* Botón  */}
       <button
         onClick={() => navigate("/")}
         style={{

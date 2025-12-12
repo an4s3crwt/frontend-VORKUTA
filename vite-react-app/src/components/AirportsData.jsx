@@ -2,7 +2,11 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
-// --- CONFIGURACIÓN: HUBS GLOBALES ---
+// ==========================================
+// 1. EL MENÚ DE OPCIONES (CONFIGURACIÓN)
+// ==========================================
+// Esta lista define los aeropuertos principales que el usuario puede elegir.
+// Cada uno tiene su foto y sus coordenadas GPS exactas para hacer el escaneo.
 const POPULAR_AIRPORTS = [
   // EUROPA
   { iata: 'MAD', name: 'Madrid Barajas', lat: 40.4839, lon: -3.5679, img: 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=800&q=80' },
@@ -11,36 +15,31 @@ const POPULAR_AIRPORTS = [
   { iata: 'CDG', name: 'Paris Charles de Gaulle', lat: 49.0097, lon: 2.5479, img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80' },
   { iata: 'AMS', name: 'Amsterdam Schiphol', lat: 52.3080, lon: 4.7642, img: 'https://images.unsplash.com/photo-1596798926830-22c67623910b?auto=format&fit=crop&w=800&q=80' },
   { iata: 'FRA', name: 'Frankfurt Intl', lat: 50.0333, lon: 8.5705, img: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=800&q=80' },
-  
-  // AMÉRICA
-  { iata: 'JFK', name: 'New York JFK', lat: 40.6413, lon: -73.7781, img: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'LAX', name: 'Los Angeles Intl', lat: 33.9416, lon: -118.4085, img: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'MIA', name: 'Miami Intl', lat: 25.7959, lon: -80.2871, img: 'https://images.unsplash.com/photo-1535498730771-e735b998cd64?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'ATL', name: 'Atlanta Hartsfield', lat: 33.6407, lon: -84.4277, img: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'GRU', name: 'São Paulo Guarulhos', lat: -23.4356, lon: -46.4731, img: 'https://images.unsplash.com/photo-1483385573908-6a2ab13c4116?auto=format&fit=crop&w=800&q=80' },
-
-  // ASIA / MEDIO ORIENTE
-  { iata: 'DXB', name: 'Dubai International', lat: 25.2532, lon: 55.3657, img: 'https://images.unsplash.com/photo-1512453979798-5ea904ac66de?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'HND', name: 'Tokyo Haneda', lat: 35.5494, lon: 139.7798, img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'SIN', name: 'Singapore Changi', lat: 1.3644, lon: 103.9915, img: 'https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=800&q=80' },
-  { iata: 'SYD', name: 'Sydney Kingsford', lat: -33.9461, lon: 151.1772, img: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80' },
 ];
 
 export default function AirportsData() {
-  const [selectedAirport, setSelectedAirport] = useState(null); 
-  const [airports, setAirports] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // --- VARIABLES DE ESTADO (LO QUE VE EL USUARIO) ---
+  const [selectedAirport, setSelectedAirport] = useState(null); // ¿Qué aeropuerto estamos mirando?
+  const [airports, setAirports] = useState([]);                 // La lista de vuelos encontrados
+  const [loading, setLoading] = useState(false);                // LOADING
+  const [error, setError] = useState(null);                     // Si algo sale mal, lo guardamos aquí
   
+  // Herramientas internas para navegación y control
   const processedCallsigns = useRef(new Set());
   const observer = useRef();
   const navigate = useNavigate();
 
-  // === 💾 MEMORIA DE SESIÓN (Para que al volver no recargue) ===
+  // ==========================================
+  // 2. SISTEMA DE MEMORIA 
+  // ==========================================
+  // Este bloque sirve para que la aplicación "no sea olvidadiza".
+  // Si el usuario entra en un vuelo y luego pulsa "Atrás", recordamos qué
+  // aeropuerto y qué vuelos estaba mirando para no obligarle a cargar todo de nuevo.
   useEffect(() => {
     const savedState = sessionStorage.getItem('radarState');
     if (savedState) {
         const parsed = JSON.parse(savedState);
+        // Si hay datos guardados en la memoria del navegador, los restauramos.
         if (parsed.airport && parsed.flights && parsed.flights.length > 0) {
             setSelectedAirport(parsed.airport);
             setAirports(parsed.flights);
@@ -49,19 +48,23 @@ export default function AirportsData() {
     }
   }, []);
 
+  // Cuando el usuario hace click en un vuelo para ver detalles:
+  // 1. Guardamos la "foto" actual de la pantalla en la memoria (sessionStorage).
+  // 2. Navegamos a la pantalla de detalle.
   const handleFlightClick = (flight) => {
       const stateToSave = { airport: selectedAirport, flights: airports };
       sessionStorage.setItem('radarState', JSON.stringify(stateToSave));
       navigate(`/airport/${flight.icao24}`);
   };
 
+  // Botón "Volver al Dashboard": Borramos la memoria y reseteamos la vista.
   const handleBackToDashboard = () => {
       sessionStorage.removeItem('radarState');
       setSelectedAirport(null);
       setAirports([]);
   };
 
-  // Helper Backend
+  // Convierte los datos brutos y numéricos del radar en algo que nuestra IA entienda
   const formatForBackend = (stateVector) => {
     return {
       icao24: stateVector[0],
@@ -77,6 +80,7 @@ export default function AirportsData() {
     };
   };
 
+  // Preguntamos a nuestra API de IA si cree que este vuelo se retrasará.
   const getPrediction = async (telemetryData) => {
     try {
       const response = await api.post('/predict-delay', { flight_data: telemetryData });
@@ -84,21 +88,27 @@ export default function AirportsData() {
     } catch (e) { return null; }
   };
 
-  // === 📡 CARGA OPTIMIZADA POR ZONA ===
+  // ==========================================
+  // 3. EL CEREBRO DE LA BÚSQUEDA (FETCHING)
+  // ==========================================
+  // Esta función es la que hace el trabajo DE FILTRO cuando eliges un aeropuerto.
   const fetchAreaFlights = useCallback(async (airport) => {
     setLoading(true);
     setError(null);
-    setAirports([]);
+    setAirports([]); // Limpiamos la lista anterior
     processedCallsigns.current.clear();
 
     try {
-      // Radio pequeño (45km) para carga rápida y relevante
+      // DEFINIMOS EL ÁREA DE ESCANEO:
+      // Creamos una "caja" imaginaria alrededor del aeropuerto seleccionado.
+      // R = 0.4 grados es aproximadamente un radio de 45km.
       const R = 0.4; 
       const lamin = airport.lat - R;
       const lamax = airport.lat + R;
       const lomin = airport.lon - R;
       const lomax = airport.lon + R;
 
+      // 1. BUSCAMOS AVIONES en esa caja geográfica
       const statesRes = await api.get('/flights/area', {
           params: { lamin, lomin, lamax, lomax }
       });
@@ -110,34 +120,43 @@ export default function AirportsData() {
           return;
       }
 
-      // Limitamos a 25 para no saturar y que sea fluido
+      // Limitamos a 25 vuelos para que la app vaya fluida
       const rawStates = statesData.states;
       const currentBatch = rawStates.slice(0, 25); 
 
+      // 2. ENRIQUECEMOS LOS DATOS
+      // El radar solo nos da coordenadas. Aquí buscamos:
+      // - ¿De dónde viene y a dónde va? (Ruta)
+      // - ¿Cómo se llama el aeropuerto de origen?
+      // - ¿Qué opina la IA sobre un posible retraso?
       const results = await Promise.all(
         currentBatch.map(async (stateVector) => {
-          const callsign = stateVector[1].trim();
+          const callsign = stateVector[1].trim(); // Ej: "IBE1234"
           if (!callsign) return null;
 
           try {
+            // Consulta externa para obtener la ruta (Origen - Destino) según el callsingn
             const routeRes = await fetch(`https://hexdb.io/callsign-route-iata?callsign=${callsign}`);
             let dep = '?', arr = '?';
             
             if (routeRes.ok) {
                 const route = await routeRes.text();
-                // Filtro básico de calidad
+                // Filtramos rutas desconocidas o erróneas
                 if (route.includes('Unknown') || !route.includes('-')) return null;
                 [dep, arr] = route.split('-').map(s => s?.trim());
             } else {
                 return null;
             }
 
+            // Obtenemos detalles  del aeropuerto (nombre completo, país...)
             const airportRes = await fetch(`https://hexdb.io/api/v1/airport/iata/${dep}`);
             const airportData = airportRes.ok ? await airportRes.json() : {};
 
+            // Preparamos datos y pedimos predicción de retraso
             const telemetryPayload = formatForBackend(stateVector);
             const prediction = await getPrediction(telemetryPayload);
 
+            // Devolvemos el "Vuelo Completo" listo para mostrar
             return {
               callsign,
               icao24: stateVector[0],
@@ -147,15 +166,17 @@ export default function AirportsData() {
               departure: dep,
               arrival: arr,
               telemetry: {
+                // Convertimos a unidades legibles: Pies y Km/h
                 alt: Math.round(stateVector[13] || stateVector[7] || 0),
                 spd: Math.round((stateVector[9] || 0) * 3.6)
               },
-              prediction
+              prediction // Aquí va la predicción de la IA
             };
           } catch (err) { return null; }
         })
       );
 
+      // Filtramos los resultados válidos y actualizamos la pantalla
       const valid = results.filter(Boolean);
       setAirports(valid);
       
@@ -163,20 +184,23 @@ export default function AirportsData() {
       console.error(e);
       setError("Connection error. Please try again.");
     } finally {
-      setLoading(false);
+      setLoading(false); // Terminamos de cargar
     }
   }, []);
 
-  // Cargar si seleccionamos aeropuerto y no hay caché
+  // Efecto automático: Si elegimos aeropuerto y la lista está vacía, lanzamos la búsqueda.
   useEffect(() => {
     if (selectedAirport && airports.length === 0) {
         fetchAreaFlights(selectedAirport);
     }
   }, [selectedAirport, airports.length, fetchAreaFlights]);
 
-  // === RENDER ===
+  // ==========================================
+  // 4. LA INTERFAZ 
+  // ==========================================
   
-  // VISTA DASHBOARD (Selección)
+  // ESCENA 1: EL DASHBOARD (Selector de Aeropuertos)
+ 
   if (!selectedAirport) {
       return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -185,17 +209,20 @@ export default function AirportsData() {
                 <p className="text-gray-500">Select a major hub to perform real-time AI scanning</p>
             </div>
 
+            {/* Rejilla de tarjetas con fotos de aeropuertos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {POPULAR_AIRPORTS.map((airport) => (
                     <div 
                         key={airport.iata}
-                        onClick={() => setSelectedAirport(airport)}
+                        onClick={() => setSelectedAirport(airport)} // Al hacer click, cambia el estado y carga la siguiente vista
                         className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                     >
+                        {/* Imagen de fondo con efecto zoom al pasar el ratón */}
                         <div className="absolute inset-0">
                             <img src={airport.img} alt={airport.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
                         </div>
+                        {/* Texto sobre la imagen */}
                         <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
                             <div className="flex justify-between items-end">
                                 <div>
@@ -214,9 +241,11 @@ export default function AirportsData() {
       );
   }
 
-  // VISTA LISTA DE VUELOS
+  // ESCENA 2: LA LISTA DE VUELOS (Radar)
+
   return (
     <div className="relative max-w-4xl mx-auto px-4 py-6">
+      {/* Cabecera con botón "Atrás" */}
       <div className="flex items-center justify-between mb-8">
         <button 
             onClick={handleBackToDashboard} 
@@ -234,13 +263,14 @@ export default function AirportsData() {
 
       <div className="space-y-4">
         {airports.map((flight, i) => {
+          // Extraemos la info de predicción 
           const delayMinutes = flight.prediction?.delay_minutes || 0;
           const status = flight.prediction?.status || 'on_time';
           
+          // FLAG VISUAL: Lógica para decidir colores según el estado
           let statusColor = 'green';
           let labelText = 'ON TIME';
           
-          // 🔥 LÓGICA DE COLORES COMPLETA 🔥
           if (status === 'delayed') { 
               statusColor = 'red'; 
               labelText = 'DELAYED'; 
@@ -251,9 +281,10 @@ export default function AirportsData() {
           }
           else if (status === 'scheduled') { 
               statusColor = 'blue'; 
-              labelText = 'TAXI/GND'; // Azul para Ground Ops
+              labelText = 'TAXI/GND'; // Azul si está rodando en pista
           }
 
+          // Diccionarios de estilos CSS según el color elegido arriba
           const colors = {
               green: 'bg-green-50 text-green-700 border-green-200',
               red: 'bg-red-50 text-red-700 border-red-200',
@@ -262,7 +293,7 @@ export default function AirportsData() {
           };
           const dots = {
               green: 'bg-green-500', 
-              red: 'bg-red-500 animate-pulse', 
+              red: 'bg-red-500', 
               yellow: 'bg-yellow-500', 
               blue: 'bg-blue-500'
           };
@@ -273,21 +304,29 @@ export default function AirportsData() {
               onClick={() => handleFlightClick(flight)} 
               className="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer overflow-hidden"
             >
+              {/* Barra lateral de color indicador */}
               <div className={`absolute left-0 top-0 bottom-0 w-1 bg-${statusColor}-500`}></div>
+              
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pl-3">
+                
+                {/* Info Principal: Bandera, Callsign y Ruta */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-sm text-2xl font-bold text-gray-400">
+                    {/* Intentamos cargar la bandera del país. Si falla, se oculta. */}
                     <img src={`https://flagcdn.com/w40/${flight.countryCode?.toLowerCase()}.png`} alt={flight.country} className="w-8 rounded shadow-sm" onError={e => e.target.style.display = 'none'} />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">{flight.callsign}</h3>
                     <div className="flex items-center gap-2 mt-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
+                       {/* Resaltamos en azul si el origen/destino es el aeropuerto que estamos mirando */}
                        <span className={`px-2 py-0.5 rounded text-xs font-mono ${flight.departure === selectedAirport.iata ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 dark:bg-gray-700'}`}>{flight.departure}</span>
                        <span className="text-gray-300">➜</span>
                        <span className={`px-2 py-0.5 rounded text-xs font-mono ${flight.arrival === selectedAirport.iata ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 dark:bg-gray-700'}`}>{flight.arrival}</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Telemetría: Altitud y Velocidad */}
                 <div className="hidden md:flex gap-6 text-xs text-gray-500 font-mono border-l border-r border-gray-100 dark:border-gray-700 px-6 mx-auto">
                   <div className="text-center">
                     <div className="font-bold text-gray-800 dark:text-gray-200 text-sm">{flight.telemetry.alt} ft</div>
@@ -298,6 +337,8 @@ export default function AirportsData() {
                     <div className="text-[10px] tracking-wider uppercase">Velocidad</div>
                   </div>
                 </div>
+
+                {/* Estado (Derecha): On Time, Delayed, etc. */}
                 <div className="flex flex-col items-end min-w-[120px]">
                     <div className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 border ${colors[statusColor]}`}>
                         <span className={`w-2 h-2 rounded-full ${dots[statusColor]}`}></span>
@@ -312,8 +353,10 @@ export default function AirportsData() {
           );
         })}
 
+        {/* Mensaje de Carga (Spinner) */}
         {loading && <div className="text-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p className="mt-2 text-gray-500">Scanning local airspace...</p></div>}
         
+        {/* Mensaje de "No se encontró nada" */}
         {!loading && airports.length === 0 && !error && (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                 <p className="text-gray-500 font-medium">No active flights found immediately near {selectedAirport.iata}.</p>

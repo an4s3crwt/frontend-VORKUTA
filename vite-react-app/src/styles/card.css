@@ -1,4 +1,4 @@
-/* Efecto Glassmorphism para el modal */
+
 .modal-content {
     backdrop-filter: blur(10px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(10px) saturate(180%) !important;

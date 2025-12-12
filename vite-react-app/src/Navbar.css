@@ -1,155 +1,206 @@
-
-
-
-
-/* Estilos Navbar (modificados para más separación y animación correcta) */
+/* 1. LA BARRA LATERAL (Estilo Flotante Elegante) */
 .navbar {
     position: fixed;
-    top: 6rem;
-    left: 1rem;
-   
-    background: #fff;
-    border-radius: 8px;
-    padding: 1rem ;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.03);
-      width: 70px; /* o más ancho si necesitas */
-  height: 81.5%;
+    /* Márgenes para que FLOTE separado de los bordes */
+    top: 1.5rem;
+    left: 1.5rem;
+    bottom: 1.5rem; /* Altura dinámica restando márgenes */
+    
+    width: 90px;    /* Ancho fijo */
+    
+    background-color: var(--bg-sidebar);
+    
+    /* Bordes redondeados para el efecto flotante */
+    border-radius: 24px;
+    
+    /* Sombra suave para dar profundidad */
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color); /* Borde sutil opcional */
+
+    padding: 6rem 0 2rem 0; /* Espacio arriba para la hamburguesa */
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: space-between;
     z-index: 1000;
+    
+    /* Animación suave de entrada/salida */
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s ease;
 }
 
+/* ESTADO OCULTO (Se va a la izquierda) */
+.navbar--hidden {
+    transform: translateX(-150%); /* Se esconde más allá del borde */
+    box-shadow: none;
+}
+
+/* 2. EL MENÚ */
 .navbar__menu {
     list-style: none;
     padding: 0;
     margin: 0;
     width: 100%;
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem; /* Espacio entre iconos */
+    flex-grow: 1;
 }
 
-/* Más separación entre los items */
 .navbar__item {
     width: 100%;
-    position: relative;
-    margin-bottom: 1rem; /* espacio vertical aumentado */
-    z-index: 2;
+    display: flex;
+    justify-content: center;
+    position: relative; /* Necesario para el indicador */
 }
 
+/* 3. LOS BOTONES (ENLACES) */
 .navbar__link {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: auto; /* quitar altura fija para que se adapte */
-    padding: 1rem 0; /* más espacio arriba y abajo */
-    width: 100%;
-    color: #000000;
-    transition: 250ms ease all;
-    text-decoration: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px; /* Botones cuadraditos redondeados */
     background: transparent;
+    color: var(--text-secondary);
     border: none;
     cursor: pointer;
-    font-weight: 600;
+    transition: all 0.2s ease;
+    z-index: 2;
 }
 
-/* Tamaño iconos igual */
-.navbar__link i, 
 .navbar__link svg {
-  font-size: 1.5rem;
-  width: 24px;
-  height: 24px;
+    width: 26px; 
+    height: 26px;
+    stroke-width: 2px;
 }
 
-/* Texto al pasar por encima */
+/* Hover Efecto */
+.navbar__link:hover {
+    color: var(--text-primary);
+}
+
+/* Tooltip (Texto al lado) */
 .navbar__link span {
     position: absolute;
-    left: 80%;
-    transform: translateX(-3rem);
-    margin-left: 1rem;
+    left: 75px; /* Ajustado para salir de la barra flotante */
+    background: var(--bg-sidebar);
+    color: var(--text-primary);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
     opacity: 0;
+    visibility: hidden;
+    transform: translateX(-10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     pointer-events: none;
-    color: #000000;
-    background: #fff;
-    padding: 0.75rem;
-    transition: 250ms ease all;
-    border-radius: 17.5px;
     white-space: nowrap;
-    font-size: 13px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.navbar__link:hover {
-    color: #000000;
+    border: 1px solid var(--border-color);
 }
 
 .navbar__link:hover span {
     opacity: 1;
+    visibility: visible;
     transform: translateX(0);
 }
 
-/* Indicador (cuadrito) adaptado a la nueva altura de los items */
+/* INDICADOR DE FONDO (El cuadrito que se mueve) */
 .navbar__indicator {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    width: 56px;         /* antes 48px */
-    height: 56px;        /* antes 48px */
-    background-color: #ffffff;
-    border-radius: 14px; /* antes 12px, para seguir siendo redondeado */
-    transition: top 250ms ease, background 250ms ease;
+    width: 56px;
+    height: 56px;
+    background-color: var(--hover-bg); /* Color sutil del tema */
+    border-radius: 16px;
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
     z-index: 1;
-    pointer-events: none;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+    opacity: 0; /* Se muestra vía JS */
 }
 
-
-/* Para ocultar el navbar (sin cambios) */
-.navbar--hidden {
-    transform: translateX(-100%);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+/* 4. BOTÓN DE TEMA (SOL/LUNA) */
+.theme-toggle-container {
+    margin-top: auto;
 }
 
-/* Hamburger menu (sin cambios) */
+.theme-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%; /* Redondo */
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+    transform: rotate(45deg);
+}
+
+/* 5. BOTÓN HAMBURGUESA (LA X) - VERSIÓN FINAL CORREGIDA */
 .hamburger {
     position: fixed;
-    top: 1.5rem;
-    left: calc(0.5rem + 50px);
-    transform: translateX(-40%);
+    /* Alineado visualmente con el padding-top de la barra flotante */
+    top: 2.5rem; 
+    
+    /* CENTRADO AUTOMÁTICO EN LA BARRA */
+    left: 1.5rem; /* Mismo margen izquierdo que la barra (.navbar) */
+    width: 90px;  /* Mismo ancho que la barra (.navbar) */
+    
+    height: 40px;
     cursor: pointer;
-    z-index: 1200;
+    z-index: 1100; /* Encima de la barra */
+    background: transparent;
+    
+    /* Flexbox para centrar el icono dentro del contenedor de 90px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    transition: width 0.3s ease, left 0.3s ease;
 }
 
-.hamburger input {
-    display: none;
+/* Cuando el menú se cierra, el botón se mueve y se hace pequeño */
+body:has(.navbar--hidden) .hamburger {
+    width: 40px; /* Se hace cuadrado */
+    left: 1.5rem; /* Se queda pegado al margen */
+}
+
+/* 🛑 ELIMINAR CHECKBOX VISIBLE  */
+.hamburger input { 
+    display: none; 
 }
 
 .hamburger svg {
-    height: 4em;
-    transition: transform 900ms cubic-bezier(0.7, 0, 0.2, 1);
+    width: 32px;
+    height: 32px;
+    display: block;
 }
 
 .line {
     fill: none;
-    stroke: rgb(0, 0, 0);
+    stroke: var(--text-primary); /* Se adapta al tema */
+    stroke-width: 3;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 2.5;
-    transition: stroke-dasharray 900ms cubic-bezier(0.4, 0, 0.2, 1),
-        stroke-dashoffset 900ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: stroke-dasharray 0.4s, stroke-dashoffset 0.4s;
 }
 
-.line-top-bottom {
-    stroke-dasharray: 12 63;
-}
+.line-top-bottom { stroke-dasharray: 12 63; }
 
-.hamburger input:checked+svg {
-    transform: rotate(-45deg);
-}
-
-.hamburger input:checked+svg .line-top-bottom {
+/* Animación de transformación a X */
+.hamburger input:checked + svg { transform: rotate(-45deg); }
+.hamburger input:checked + svg .line-top-bottom {
     stroke-dasharray: 20 300;
     stroke-dashoffset: -32.42;
 }

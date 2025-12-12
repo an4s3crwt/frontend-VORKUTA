@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet"; // Asegúrate de importar Leaflet
+import L from "leaflet"; 
 import "leaflet/dist/leaflet.css";
 
 // Función para obtener el icono basado en la dirección (heading)
 const getPlaneIcon = (heading) => {
     const direction = Math.floor(heading / 45) * 45; // Redondear a la dirección más cercana
     return new L.Icon({
-        iconUrl: `/directions/d${direction}.png`, // Asegúrate de que tengas estos archivos en la carpeta "directions"
+        iconUrl: `/directions/d${direction}.png`, 
         iconSize: [24, 24], // Tamaño del icono
         iconAnchor: [12, 12], // El centro del icono
         popupAnchor: [0, -10], // Donde se ancla el popup

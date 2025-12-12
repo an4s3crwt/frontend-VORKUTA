@@ -1,50 +1,49 @@
+/* VARIABLES DE COLOR (Negro Puro en Dark) */
+.app-layout.light {
+    --bg-main: #f0f2f5;
+    --bg-sidebar: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #64748b;
+    --hover-bg: #f1f5f9;
+    --border-color: #e2e8f0;
+}
+
+.app-layout.dark {
+    --bg-main: #0a0a0a;    
+    --bg-sidebar: #000000; /* Negro Puro */
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --hover-bg: #1a1a1a;
+    --border-color: #333333;
+}
+
 .app-layout {
     display: flex;
     height: 100vh;
     width: 100vw;
-
-    overflow: visible;
- 
-}
-/* Navbar visible */
-.navbar {
-   
-    transition: transform 0.3s ease, width 0.3s ease;
-    /* Si tienes position: fixed aquí, mejor quitarlo para que afecte al layout */
-    /* position: fixed; */
+    overflow: hidden;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Navbar oculto */
-.navbar--hidden {
-    transform: translateX(-100%);
-    width: 0;
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Contenido con navbar visible */
+/* CONTENIDO PRINCIPAL */
 .content-area {
     flex-grow: 1;
-    margin-left: 90px;
-    /* espacio para navbar */
-    padding: 1rem;
-    transition: margin-left 0.5s ease, width 0.5s ease;
-
-
- overflow-y: auto;
-   
-
-
-
-
-
-
-
-    border-radius: 8px;
+    padding: 2rem;
+    
+    /* 1.5rem (margen izq) + 90px (barra) + 1.5rem (espacio extra) */
+    margin-left: 130px; 
+    
+    /* Animación suave igual que la barra */
+    transition: margin-left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    
+    height: 100vh;
+    overflow-y: auto;
 }
 
-/* Contenido con navbar oculto */
+/* Cuando el menú se cierra */
 .content-area.navbar-hidden {
     margin-left: 0;
+    padding-left: 5rem; /* Espacio para el botón hamburguesa cerrado */
 }
-

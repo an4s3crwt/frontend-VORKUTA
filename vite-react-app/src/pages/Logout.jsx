@@ -1,4 +1,3 @@
-// src/pages/Logout.jsx
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice'; // Acción para logout
