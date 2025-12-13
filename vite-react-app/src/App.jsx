@@ -16,7 +16,7 @@ import Layout from "./pages/Layout";
 import FlightInfo from "./pages/Flight/FlightInfo";
 import FlightList from "./pages/Flight/FlightList";
 import NearbyFlightsScanner from './pages/NearbyFlightsScanner';
-import AirplaneData from './components/AirplaneData';
+
 import AirlinesData from './components/AirlinesData';
 import AirportsData from './components/AirportsData';
 
