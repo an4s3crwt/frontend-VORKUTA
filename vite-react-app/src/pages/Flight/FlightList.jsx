@@ -151,7 +151,7 @@ function FlightList() {
             {isLoading && (
                 <div className="absolute top-4 right-4 z-50 flex items-center space-x-3 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg animate-fadeIn">
                     <div className="w-6 h-6 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-                    <span className="text-gray-800 font-semibold">Actualizando tráfico...</span>
+                    <span className="text-gray-800 font-semibold">Loading flights...</span>
                 </div>
             )}
 

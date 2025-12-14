@@ -1,4 +1,4 @@
-/* FlightInfo.css */
+/* --- GLOBAL CONTAINER --- */
 .flight-info-container {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: #0f1419;
@@ -8,10 +8,14 @@
     padding: 1rem;
 }
 
+/* --- HEADER & STATUS --- */
 .flight-header {
     margin-bottom: 1.5rem;
     border-bottom: 1px solid #e1e1e1;
     padding-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
 }
 
 .flight-header h2 {
@@ -20,597 +24,246 @@
     margin: 0;
 }
 
+.back-btn-header {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #536471;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+.back-btn-header:hover { background: #f3f4f6; }
+
+.refresh-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #1d9bf0;
+    font-size: 1.2rem;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+.refresh-btn:hover { background: #e8f5fe; }
+
 .last-update {
     color: #536471;
     font-size: 0.9rem;
-    margin: 0.5rem 0 0;
+    margin: 0;
 }
 
+/* Status Alerts */
 .status-alert {
     padding: 0.75rem 1rem;
     border-radius: 8px;
     margin-bottom: 1.5rem;
     font-weight: 600;
+    text-align: center;
 }
+.status-in-air { background-color: #e8f5fe; color: #1d9bf0; border: 1px solid #1d9bf0; }
+.status-on-ground { background-color: #e7f9ed; color: #00ba7c; border: 1px solid #00ba7c; }
+.status-not-live, .status-unknown { background-color: #f7f9fa; color: #536471; border: 1px solid #e1e1e1; }
 
-.status-in-air {
-    background-color: #e8f5fe;
-    color: #1d9bf0;
-    border: 1px solid #1d9bf0;
-}
-
-.status-on-ground {
-    background-color: #e7f9ed;
-    color: #00ba7c;
-    border: 1px solid #00ba7c;
-}
-
-.status-not-live {
-    background-color: #f7f9fa;
-    color: #536471;
-    border: 1px solid #e1e1e1;
-}
-
-.status-unknown {
-    background-color: #f7f9fa;
-    color: #536471;
-    border: 1px solid #e1e1e1;
-}
-
+/* --- CONTENT GRID --- */
 .flight-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 2fr 1fr; /* Map takes more space */
     gap: 1.5rem;
 }
 
 .map-container {
-    height: 500px;
+    height: 600px;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1; /* Fix z-index stacking issues */
 }
+.flight-map { height: 100%; width: 100%; }
 
-.flight-map {
-    height: 100%;
-    width: 100%;
-}
-
-.airport-popup {
-    font-size: 0.9rem;
-}
-
-.airport-popup strong {
-    display: block;
-    margin-bottom: 0.25rem;
-}
-
-.airport-location {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.airport-location img {
-    width: 20px;
-    height: auto;
-}
-
+/* --- RIGHT COLUMN (DETAILS) --- */
 .flight-details {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
-.route-info {
+/* Route Info */
+.route-info, .flight-stats, .aircraft-info {
     background-color: #f7f9fa;
     border-radius: 12px;
     padding: 1.25rem;
+    border: 1px solid #eff3f4;
 }
 
-.route-info h3 {
+.route-info h3, .aircraft-info h3 {
     margin-top: 0;
     margin-bottom: 1rem;
     font-size: 1.1rem;
+    color: #0f1419;
 }
 
 .route-airports {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: space-between;
 }
 
-.airport {
-    flex: 1;
-}
+.airport { flex: 1; }
+.airport-label { font-size: 0.75rem; color: #536471; text-transform: uppercase; letter-spacing: 0.5px; }
+.airport-name { font-weight: 700; font-size: 1.1rem; margin: 4px 0; color: #0f1419; }
+.airport-code { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #536471; }
+.route-separator { font-size: 1.5rem; color: #cfd9de; padding: 0 10px; }
 
-.airport-label {
-    font-size: 0.8rem;
-    color: #536471;
-    margin-bottom: 0.25rem;
-}
-
-.airport-name {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.airport-code {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.airport-code img {
-    width: 20px;
-    height: auto;
-}
-
-.route-separator {
-    font-size: 1.2rem;
-    color: #536471;
-}
-
+/* Stats Grid */
 .flight-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    background-color: #f7f9fa;
-    border-radius: 12px;
-    padding: 1.25rem;
 }
+.stat-item { text-align: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #eff3f4; }
+.stat-label { font-size: 0.75rem; color: #536471; margin-bottom: 4px; }
+.stat-value { font-weight: 800; font-size: 1.25rem; color: #0f1419; }
 
-.stat-item {
-    text-align: center;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: #536471;
-    margin-bottom: 0.25rem;
-}
-
-.stat-value {
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
-.aircraft-info {
-    background-color: #f7f9fa;
-    border-radius: 12px;
-    padding: 1.25rem;
-}
-
-.aircraft-info h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-
-.aircraft-content {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.aircraft-text {
-    flex: 1;
-}
-
-.info-row {
-    display: flex;
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-}
-
-.info-label {
-    font-weight: 600;
-    min-width: 120px;
-    color: #536471;
-}
-
-.info-value {
-    color: #0f1419;
-}
+/* Aircraft Info */
+.aircraft-content { display: flex; gap: 1rem; align-items: flex-start; }
+.aircraft-text { flex: 1; }
+.info-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; border-bottom: 1px dashed #e1e1e1; padding-bottom: 4px; }
+.info-label { font-weight: 600; color: #536471; }
+.info-value { color: #0f1419; font-weight: 500; }
 
 .aircraft-image {
-    width: 150px;
-    height: 150px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 120px;
+    height: 80px;
     background-color: #fff;
     border-radius: 8px;
     overflow: hidden;
-}
-
-.aircraft-image img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-/* Responsive styles */
-@media (max-width: 900px) {
-    .flight-content {
-        grid-template-columns: 1fr;
-    }
-
-    .map-container {
-        height: 400px;
-    }
-
-    .aircraft-content {
-        flex-direction: column;
-    }
-
-    .aircraft-image {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 1/1;
-    }
-}
-
-@media (max-width: 480px) {
-    .route-airports {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .route-separator {
-        display: none;
-    }
-
-    .flight-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .info-row {
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .info-label {
-        min-width: auto;
-    }
-}
-
-/* FlightInfo.css - Añade estos estilos */
-
-.delay-prediction-section {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.delay-prediction {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.delay-prediction.on-time {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.delay-prediction.delayed {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.delay-prediction i {
-    margin-right: 8px;
-}
-
-.prediction-loading {
-    color: #6c757d;
+    border: 1px solid #eff3f4;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
+.aircraft-image img { max-width: 100%; max-height: 100%; object-fit: cover; }
 
-.prediction-loading i {
-    margin-right: 8px;
-}
-
-.prediction-details {
-    margin-top: 10px;
-    color: #6c757d;
-    font-size: 0.9em;
-}
-
-.status-in-air.status-on-time {
-    background-color: #d4edda;
-    border-left: 5px solid #28a745;
-}
-
-.status-in-air.status-delayed {
-    background-color: #fff3cd;
-    border-left: 5px solid #ffc107;
-}
-
-/* Contenedor de la tarjeta */
+/* --- AI PREDICTION CARD --- */
 .prediction-card {
-    grid-column: 1 / -1; /* Ocupa todo el ancho en el grid de stats */
+    grid-column: 1 / -1;
     background: #fff;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 15px;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 10px;
+    border: 1px solid #e1e1e1;
     border-left: 5px solid #ccc;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    transition: transform 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.prediction-card:hover {
-    transform: translateY(-2px);
-}
+/* Card States */
+.prediction-card.on-time { border-left-color: #2ecc71; background: linear-gradient(to right, #f0fff4, #ffffff); }
+.prediction-card.moderate-delay { border-left-color: #f1c40f; background: linear-gradient(to right, #fffcf0, #ffffff); }
+.prediction-card.severe-delay { border-left-color: #e74c3c; background: linear-gradient(to right, #fff0f0, #ffffff); }
+.prediction-card.scheduled-state { border-left-color: #3498db; background: linear-gradient(to right, #f0f8ff, #ffffff); }
 
-/* Estados de Color (Semántica) */
-.prediction-card.on-time {
-    border-left-color: #2ecc71; /* Verde esmeralda */
-    background: linear-gradient(to right, #f0fff4, #ffffff);
-}
-
-.prediction-card.moderate-delay {
-    border-left-color: #f1c40f; /* Amarillo */
-    background: linear-gradient(to right, #fffcf0, #ffffff);
-}
-
-.prediction-card.severe-delay {
-    border-left-color: #e74c3c; /* Rojo */
-    background: linear-gradient(to right, #fff0f0, #ffffff);
-}
-
-.prediction-card.loading-state {
-    border-left-color: #3498db;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #666;
-}
-
-.prediction-card.error-state {
-    border-left-color: #95a5a6;
-    color: #7f8c8d;
-}
-
-/* Cabecera de la tarjeta */
 .prediction-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
+    align-items: center;
+    margin-bottom: 12px;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #999;
-    font-weight: 600;
+    color: #536471;
+    font-weight: 700;
 }
 
-/* Cuerpo de la tarjeta */
-.prediction-body {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.status-icon {
-    font-size: 2rem;
-}
-
+.prediction-body { display: flex; align-items: center; gap: 15px; }
+.status-icon { font-size: 2.2rem; }
 .on-time .status-icon { color: #2ecc71; }
 .moderate-delay .status-icon { color: #f1c40f; }
 .severe-delay .status-icon { color: #e74c3c; }
+.scheduled-state .status-icon { color: #3498db; }
 
-.status-details {
-    display: flex;
-    flex-direction: column;
-}
+.status-details { display: flex; flex-direction: column; flex: 1; }
+.status-main { font-size: 1.25rem; font-weight: 800; color: #0f1419; }
+.status-sub { font-size: 0.85rem; color: #536471; margin-bottom: 6px; }
 
-.status-main {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #2c3e50;
-}
-
-.status-sub {
-    font-size: 0.85rem;
-    color: #7f8c8d;
-}
-
-/* FlightInfo.css */
-
-.refresh-card-btn {
-    background: transparent;
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.7rem;
-    cursor: pointer;
-    color: inherit;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    font-weight: bold;
-}
-
-.refresh-card-btn:hover {
-    background: rgba(255,255,255,0.5);
-    transform: scale(1.05);
-}
-
-.refresh-card-btn:active {
-    transform: scale(0.95);
-}
-
-.prediction-meta {
-    font-size: 0.65rem;
-    color: #666;
-    margin-bottom: 8px;
-    text-align: right;
-    font-family: monospace;
-}
-
-/* Barra de Probabilidad estilo "Data Science" */
+/* Probability Bar */
 .probability-bar-bg {
     width: 100%;
-    height: 4px;
-    background: rgba(0,0,0,0.1);
-    border-radius: 2px;
-    margin-top: 8px;
+    height: 6px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
     overflow: hidden;
 }
+.probability-bar-fill { height: 100%; border-radius: 3px; }
+.on-time .probability-bar-fill { background-color: #2ecc71; }
+.moderate-delay .probability-bar-fill { background-color: #f1c40f; }
+.severe-delay .probability-bar-fill { background-color: #e74c3c; }
+.scheduled-state .probability-bar-fill { background-color: #3498db; }
 
-.probability-bar-fill {
-    height: 100%;
-    background: currentColor; /* Usa el color del texto actual (verde/rojo) */
-    transition: width 0.5s ease-out;
-}
-
-.prob-text {
-    font-size: 0.65rem;
-    opacity: 0.8;
-    margin-top: 2px;
-}
-
-.prediction-card.scheduled-state {
-    border-left-color: #3498db; /* Azul Profesional */
-    background: linear-gradient(to right, #f0f8ff, #ffffff);
-    color: #2c3e50;
-}
-
-.scheduled-state .status-icon { 
-    color: #3498db; 
-}
-
-.scheduled-state .probability-bar-fill {
-    background-color: #3498db;
-}
-
-/* --- ESTILOS CUTE PARA POPUPS DE LEAFLET --- */
-
-/* 1. El contenedor principal del popup */
-.leaflet-popup-content-wrapper {
-    border-radius: 18px !important; /* Bordes MUY redondos */
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important; /* Sombra suave y profunda */
-    background: rgba(255, 255, 255, 0.98) !important; /* Blanco casi opaco */
-    border: 1px solid rgba(243, 244, 246, 0.8); /* Borde sutil */
-    padding: 0 !important; /* Quitamos padding por defecto para controlarlo nosotros */
-    overflow: hidden;
-}
-
-/* 2. El triangulito (la punta) de abajo */
-.leaflet-popup-tip {
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-}
-
-/* 3. El contenido interno */
-.leaflet-popup-content {
-    margin: 0 !important; /* Reseteamos margen */
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: #374151; /* Gris suave */
-    line-height: 1.5;
-}
-
-/* 4. El botón de cerrar 'X' (Hacerlo redondito) */
-.leaflet-popup-close-button {
-    top: 8px !important;
-    right: 8px !important;
-    border-radius: 50%;
-    background: #f3f4f6 !important;
-    color: #9ca3af !important;
-    width: 24px !important;
-    height: 24px !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px !important;
-    font-weight: bold;
-    border: 1px solid #e5e7eb !important;
-    transition: all 0.2s ease;
-}
-.leaflet-popup-close-button:hover {
-    background: #e5e7eb !important;
-    color: #6b7280 !important;
-    transform: scale(1.05);
-}
-
-
-/* --- CLASES INTERNAS PARA NUESTRO JSX --- */
-/* --- ESTILOS CUTE PARA POPUPS DE LEAFLET --- */
-
-.leaflet-popup-content-wrapper {
-    border-radius: 18px !important; 
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-    background: rgba(255, 255, 255, 0.98) !important; 
-    padding: 0 !important; 
-    overflow: hidden;
-}
-
-.leaflet-popup-tip {
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-}
-
-.leaflet-popup-content {
-    margin: 0 !important; 
-    font-family: ui-sans-serif, system-ui;
-    color: #374151; 
-    line-height: 1.5;
-}
-
-/* --- CLASES INTERNAS PARA NUESTRO JSX --- */
-
-.cute-popup-airport {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    font-weight: 600;
-    color: #d97706; 
-    font-size: 0.95rem;
-    background: linear-gradient(to right, #fffbeb, #fff);
-}
-
-.cute-popup-plane {
-    padding: 12px 16px;
-}
-
-.cute-plane-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 700;
-    color: #1f2937;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #f3f4f6;
-}
-.cute-plane-header i {
-    color: #3b82f6; 
-}
-
-.cute-plane-stats {
-    display: flex;
-    gap: 16px;
-    font-size: 0.85rem;
-    color: #6b7280;
-    font-family: 'ui-monospace', monospace;
-}
-
-.cute-stat {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #f9fafb;
+.prob-text { font-size: 0.7rem; color: #536471; margin-top: 4px; text-align: right; }
+.refresh-card-btn {
+    border: 1px solid #eff3f4;
+    background: #fff;
+    border-radius: 4px;
     padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid #f3f4f6;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #536471;
 }
-.cute-stat i {
-    font-size: 0.75rem;
-    color: #9ca3af;
+.refresh-card-btn:hover { background: #f7f9fa; color: #0f1419; }
+
+/* --- 🛑 LEAFLET POPUP STYLES (CRITICAL FIX) 🛑 --- */
+
+/* 1. Wrapper (The Bubble) */
+.leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.95) !important; /* Slightly transparent */
+    border-radius: 12px !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+    padding: 0 !important; /* Reset padding */
+    border: none !important;
+}
+
+/* 2. Content Area */
+.leaflet-popup-content {
+    margin: 0 !important; /* Reset margin */
+    width: 160px !important; /* Fixed width */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* 3. The Arrow Tip */
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 4. Close Button */
+.leaflet-popup-close-button {
+    display: none !important; /* Hide close button for cleaner look on hover popups */
+}
+
+/* 5. Custom Content inside the Popup (JSX classes) */
+.leaflet-popup-content .text-center {
+    padding: 12px 16px;
+    text-align: center;
+    color: #374151;
+}
+
+.leaflet-popup-content strong {
+    display: block;
+    font-size: 1.1rem;
+    color: #1d9bf0; /* Twitter/Flighty Blue */
+    margin-bottom: 6px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 6px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .flight-content { grid-template-columns: 1fr; }
+    .map-container { height: 400px; }
+    .aircraft-content { flex-direction: column; }
+    .aircraft-image { width: 100%; height: 150px; margin-top: 10px; }
 }

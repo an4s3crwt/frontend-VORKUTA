@@ -1,159 +1,170 @@
 import React, { useEffect, useState } from 'react';
 import api from './../api'; 
 
-// =============================================================================
-// PÁGINA: PERFIL DE USUARIO (Profile)
-// -----------------------------------------------------------------------------
-// Esta pantalla muestra la información personal del usuario logueado.
-// =============================================================================
-
 export default function Profile() {
-    // --- ESTADO DEL COMPONENTE ---
-    const [user, setUser] = useState(null);   // Datos del usuario 
-    const [loading, setLoading] = useState(true); // Controla el spinner
-    const [error, setError] = useState(null);     // Controla mensajes de fallo
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [copied, setCopied] = useState(false);
 
-    // --- CARGA DE DATOS (Data Fetching) ---
-    // Al montar el componente, pedimos al backend QUIEN ES EL USUARIO LOGEADO (/auth/me)
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                // Petición protegida (el token va en la cabecera automáticamente gracias a Axios)
                 const response = await api.get('/auth/me');
                 setUser(response.data);
-            } catch (error) {
-                console.error("Error fetching profile:", error);
-                setError("No se pudo cargar la información del usuario. Verifica tu conexión.");
+            } catch (err) {
+                console.error(err);
+                setError("Failed to load user information.");
             } finally {
-                // Ocultamos el spinner tanto si va bien como si falla
                 setLoading(false);
             }
         };
-
         fetchProfile();
     }, []);
 
-    // --- UTILIDAD VISUAL: GENERADOR DE AVATAR ---
-    // Si el usuario no tiene foto, creamos un avatar con sus iniciales.
-    // Ejemplo: "Carlos Ruiz" -> "CR".
-    const getInitials = (name) => {
-        return name
-            ? name.split(' ').map((n) => n[0]).join('').toUpperCase().substring(0, 2)
-            : 'U'; // 'U' de User por defecto
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+        });
     };
 
-    // --- RENDERIZADO CONDICIONAL: ESTADO DE CARGA ---
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-[calc(100vh-64px)]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
+    const getInitials = (name) => name ? name.substring(0, 2).toUpperCase() : 'U';
 
-    // --- RENDERIZADO CONDICIONAL: ESTADO DE ERROR ---
-    if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center h-64 text-red-500 animate-fadeIn">
-                <i className="fa fa-exclamation-triangle text-4xl mb-3 opacity-50"></i>
-                <p className="font-medium">{error}</p>
-                <button onClick={() => window.location.reload()} className="mt-4 text-sm text-blue-600 underline">
-                    Intentar de nuevo
-                </button>
-            </div>
-        );
-    }
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
-    // --- RENDERIZADO PRINCIPAL  ---
-    return (
-        <div className="max-w-2xl mx-auto px-4 py-12 animate-slide-up">
+   const handleLogout = async () => {
+        try {
+            // 1. Intentamos avisar al backend (opcional pero recomendado)
+            await api.post('/auth/logout');
+        } catch (error) {
+            console.error("Error al cerrar sesión en servidor", error);
+        } finally {
+            // 2. OBLIGATORIO: Borramos el token del navegador
+            // (Asegúrate de que la clave sea la misma que usas al hacer Login)
+            localStorage.removeItem('token'); 
+            localStorage.removeItem('user'); // Si guardas datos del usuario, bórralos también
             
-            {/* TARJETA DE PERFIL  */}
-            {/* Usamos 'overflow-hidden' para que la imagen de fondo no se salga de las esquinas redondeadas */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-2xl">
+            // 3. Redirigimos al usuario al Login
+            window.location.href = '/login';
+        }
+    };
+
+    if (loading) return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800"></div></div>;
+    if (error) return <div className="text-center mt-20 text-red-500 font-medium">{error}</div>;
+
+    return (
+        <div className="max-w-3xl mx-auto px-4 py-12 animate-fade-in-up">
+            
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 relative">
                 
-                {/* 1. CABECERA VISUAL  */}
-             
-                <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
-                
-                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                {/* 1. FONDO DE CABECERA (Más elegante, menos chillón) */}
+                <div className="h-40 bg-gradient-to-r from-gray-700 to-gray-900 relative">
+                    <button 
+                        onClick={handleLogout}
+                        className="absolute top-6 right-6 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full text-xs font-bold transition-all backdrop-blur-sm border border-white/10"
+                    >
+                        Sign Out
+                    </button>
                 </div>
 
-                {/* 2. CONTENIDO PRINCIPAL */}
-                <div className="px-8 pb-8 relative">
+                {/* 2. CONTENIDO CENTRADO */}
+                <div className="px-8 pb-10 flex flex-col items-center relative -mt-20">
                     
-                
-                    <div className="relative -mt-16 mb-6 flex justify-between items-end">
-                        <div className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-4xl font-bold text-gray-500 dark:text-gray-300 shadow-md">
-                            {getInitials(user.name)}
+                    {/* AVATAR CENTRADO */}
+                    <div className="relative group">
+                        <div className="h-40 w-40 rounded-full border-[6px] border-white dark:border-gray-800 bg-white dark:bg-gray-700 shadow-xl flex items-center justify-center overflow-hidden">
+                            {user.avatar_url ? (
+                                <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" onError={(e)=>{e.target.style.display='none'}}/>
+                            ) : (
+                                <span className="text-5xl font-bold text-gray-300">{getInitials(user.name)}</span>
+                            )}
                         </div>
-                        
-              
-                        <div className="mb-2 px-4 py-1.5 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-bold uppercase tracking-wide border border-green-200 dark:border-green-800 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            Active Member
-                        </div>
+                        {/* Status Dot */}
+                        <div className={`absolute bottom-3 right-3 w-6 h-6 rounded-full border-4 border-white dark:border-gray-800 ${user.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={user.status}></div>
                     </div>
 
-                    {/* DATOS DE IDENTIDAD */}
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">
-                        {user.name}
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mb-8 flex items-center gap-2 font-medium">
-                        <i className="fa fa-envelope text-gray-400"></i> 
-                        {user.email}
-                    </p>
+                    {/* IDENTIDAD DEL USUARIO */}
+                    <div className="text-center mt-4">
+                        <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-1">
+                            {user.name}
+                        </h1>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium text-sm flex items-center justify-center gap-2">
+                            {user.email}
+                            {user.is_verified && (
+                                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                            )}
+                        </p>
+                        
+                        {/* Role Badge (Centrado y elegante) */}
+                        <div className="mt-3 flex justify-center">
+                            <span className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border ${
+                                user.is_admin 
+                                ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900' 
+                                : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                            }`}>
+                                {user.role}
+                            </span>
+                        </div>
+                    </div>
 
                     {/* SEPARADOR */}
-                    <hr className="border-gray-100 dark:border-gray-700 mb-8" />
+                    <div className="w-full h-px bg-gray-100 dark:bg-gray-700 my-8"></div>
 
-                    {/* 3. GRID DE DETALLES TÉCNICOS */}
-                    {/* Información estructurada en una cuadrícula de 2 columnas */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 3. GRID DE DATOS (3 Columnas Simétricas) */}
+                    <div className="w-full grid grid-cols-3 gap-4 text-center">
                         
-                        {/* Card: ID de Usuario */}
-                        <div className="p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                            <div className="text-xs text-gray-400 uppercase font-bold mb-1 tracking-wider">Account ID</div>
-                            <div className="font-mono text-sm text-gray-700 dark:text-gray-200 truncate">
-                                #{user.id || 'Unknown-ID'}
-                            </div>
-                        </div>
-                        
-                        {/* Card: Rol / Permisos */}
-                        <div className="p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                            <div className="text-xs text-gray-400 uppercase font-bold mb-1 tracking-wider">Role & Permissions</div>
-                            <div className="font-medium text-sm text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                                {user.is_admin ? (
-                                    <><i className="fa fa-shield text-purple-500"></i> Administrator Access</>
-                                ) : (
-                                    <><i className="fa fa-user text-blue-500"></i> Standard User</>
-                                )}
+                        {/* ID */}
+                        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 transition-colors group cursor-pointer" onClick={() => copyToClipboard(user.id)}>
+                            <div className="text-xs text-gray-400 uppercase font-bold mb-1">User ID</div>
+                            <div className="font-mono text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-indigo-600">
+                                #{user.id}
                             </div>
                         </div>
 
-                        {/* Card: Estado del Sistema */}
-                        <div className="p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                            <div className="text-xs text-gray-400 uppercase font-bold mb-1 tracking-wider">System Status</div>
-                            <div className="font-medium text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-                                <i className="fa fa-check-circle"></i> Authenticated & Verified
+                        {/* MIEMBRO DESDE */}
+                        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                            <div className="text-xs text-gray-400 uppercase font-bold mb-1">Joined</div>
+                            <div className="font-medium text-lg text-gray-700 dark:text-gray-200">
+                                {formatDate(user.created_at)}
                             </div>
                         </div>
 
-                        {/* Card: Último Acceso (Simulado de momentoop) */}
-                        <div className="p-5 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                            <div className="text-xs text-gray-400 uppercase font-bold mb-1 tracking-wider">Session Info</div>
-                            <div className="font-medium text-sm text-gray-700 dark:text-gray-200">
-                                Current Session Active
+                        {/* ÚLTIMA VEZ ONLINE */}
+                        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                            <div className="text-xs text-gray-400 uppercase font-bold mb-1">Last Seen</div>
+                            <div className="font-medium text-lg text-gray-700 dark:text-gray-200">
+                                {formatDate(user.last_login_at)}
                             </div>
                         </div>
-
                     </div>
+
+                    {/* 4. FOOTER TÉCNICO (Firebase UID) */}
+                    <div className="mt-8 w-full max-w-md">
+                        <div 
+                            onClick={() => copyToClipboard(user.firebase_uid)}
+                            className="text-center group cursor-pointer"
+                        >
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1 group-hover:text-indigo-500 transition-colors">
+                                {copied ? <span className="text-green-500 font-bold">COPIED TO CLIPBOARD!</span> : 'SECURE FIREBASE UID'}
+                            </p>
+                            <div className="bg-gray-100 dark:bg-gray-900/50 py-2 px-4 rounded-lg border border-transparent group-hover:border-indigo-200 dark:group-hover:border-indigo-900 transition-all">
+                                <p className="font-mono text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {user.firebase_uid}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            {/* COPYRIGHT FOOTER */}
-            <div className="text-center mt-8 text-xs text-gray-400">
-                Flighty User Profile Module v1.0
+            <div className="text-center mt-8 text-xs text-gray-400 opacity-50">
+                User Profile • v2.1
             </div>
         </div>
     );
