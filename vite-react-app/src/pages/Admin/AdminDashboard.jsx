@@ -17,10 +17,15 @@ export default function AdminDashboard() {
     const [aiLogs, setAiLogs] = useState([]);
     const [recentUsers, setRecentUsers] = useState([]);
     const [activeTab, setActiveTab] = useState('infrastructure'); 
+    
+    // Estado de carga inicial (solo para la primera vez)
     const [loading, setLoading] = useState(true);
     const [pinging, setPinging] = useState(false);
 
-    // ESTADOS PARA HERRAMIENTAS (System Tools)
+    // ESTADOS PARA RENDIMIENTO
+    const [perfData, setPerfData] = useState({ recent: [], slowest: [] });
+    
+    // ESTADOS PARA HERRAMIENTAS
     const [consoleOutput, setConsoleOutput] = useState("> System Ready. Waiting for commands...");
     const [executing, setExecuting] = useState(false);
 
@@ -29,40 +34,55 @@ export default function AdminDashboard() {
     const [failedJobsList, setFailedJobsList] = useState([]);
     const [loadingErrors, setLoadingErrors] = useState(false);
 
+    // --- EFECTO: CARGA INICIAL + POLLING (AUTO-UPDATE) ---
     useEffect(() => {
-        fetchSystemData();
+        // 1. Carga inmediata al abrir
+        fetchSystemData(false); // false = muestra spinner de carga
+
+        // 2. Configurar el "latido" del sistema (cada 5 segundos)
+        const intervalId = setInterval(() => {
+            // true = carga silenciosa (sin spinner) para que no moleste
+            fetchSystemData(true); 
+        }, 5000); 
+
+        // 3. Limpieza al salir de la pantalla
+        return () => clearInterval(intervalId);
     }, []);
 
-    const fetchSystemData = async () => {
-        setLoading(true);
+    // Modificamos la función para aceptar el modo "background"
+    const fetchSystemData = async (isBackground = false) => {
+        // Solo mostramos el spinner gigante la primera vez
+        if (!isBackground) setLoading(true);
+        
         try {
-            const dbStats = await api.get('/admin/db-stats'); 
+            // Usamos Promise.all para que sea más rápido (peticiones en paralelo)
+            const [dbStats, usersRes, aiRes, perfRes] = await Promise.all([
+                api.get('/admin/db-stats'),
+                api.get('/admin/recent-users'),
+                api.get('/admin/ai-logs'),
+                api.get('/admin/performance-stats')
+            ]);
+
             setMetrics(dbStats.data); 
-
-            const usersRes = await api.get('/admin/recent-users');
             setRecentUsers(usersRes.data);
-
-            const aiRes = await api.get('/admin/ai-logs');
             setAiLogs(aiRes.data);
+            setPerfData(perfRes.data);
+
         } catch (error) {
             console.error("Dashboard Error:", error);
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
 
-    // --- ACCIÓN: PING OPENSKY ---
+    // --- ACCIONES ---
     const handlePingOpenSky = async () => {
         setPinging(true);
         try {
             const res = await api.get('/admin/opensky-ping');
             setExternalServices(prev => ({
                 ...prev,
-                opensky: { 
-                    status: res.data.status, 
-                    latency: res.data.latency,
-                    message: res.data.message 
-                }
+                opensky: { status: res.data.status, latency: res.data.latency, message: res.data.message }
             }));
         } catch (error) {
             setExternalServices(prev => ({
@@ -74,20 +94,18 @@ export default function AdminDashboard() {
         }
     };
 
-    // --- ACCIÓN: ELIMINAR USUARIO ---
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm("¿Estás seguro de que quieres eliminar a este usuario? Esta acción es irreversible.")) return;
+        if (!window.confirm("¿Eliminar usuario? Esta acción es irreversible.")) return;
         try {
             setRecentUsers(recentUsers.filter(u => u.id !== userId));
             await api.delete(`/admin/users/${userId}`);
             setMetrics(prev => ({...prev, totalUsers: prev.totalUsers - 1}));
         } catch (error) {
             alert("Error al eliminar usuario.");
-            fetchSystemData();
+            fetchSystemData(true);
         }
     };
 
-    // --- ACCIÓN: EJECUTAR COMANDO ARTISAN ---
     const runSystemCommand = async (action, label) => {
         setExecuting(true);
         setConsoleOutput(prev => prev + `\n> Executing: ${label}...\n[Wait] Processing...`);
@@ -95,13 +113,12 @@ export default function AdminDashboard() {
             const res = await api.post(`/admin/system/${action}`);
             setConsoleOutput(prev => prev + `\n[Success] ${res.data.output}\n> Done.`);
         } catch (error) {
-            setConsoleOutput(prev => prev + `\n[Error] Failed to execute command.\n> ${error.message}`);
+            setConsoleOutput(prev => prev + `\n[Error] Failed.\n> ${error.message}`);
         } finally {
             setExecuting(false);
         }
     };
 
-    // --- ACCIÓN: ABRIR MODAL ERRORES ---
     const handleOpenErrors = async () => {
         if (metrics.failedJobs === 0) return;
         setShowErrorModal(true);
@@ -109,11 +126,8 @@ export default function AdminDashboard() {
         try {
             const res = await api.get('/admin/failed-jobs');
             setFailedJobsList(res.data);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoadingErrors(false);
-        }
+        } catch (error) { console.error(error); } 
+        finally { setLoadingErrors(false); }
     };
 
     if (loading) return <div className="p-20 flex justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
@@ -121,7 +135,7 @@ export default function AdminDashboard() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 md:p-8 font-sans relative">
             
-            {/* --- MODAL DE ERRORES --- */}
+            {/* MODAL ERRORES */}
             {showErrorModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
                     <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl border border-red-100 dark:border-red-900/30 overflow-hidden flex flex-col max-h-[80vh]">
@@ -151,18 +165,22 @@ export default function AdminDashboard() {
             {/* HEADER */}
             <div className="mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3"><Activity className="text-indigo-600" /> System Control Center</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                        <Activity className="text-indigo-600" /> System Control Center
+                        {/* INDICADOR DE LIVE (PARPADEANTE) */}
+                        <span className="ml-2 text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span> LIVE
+                        </span>
+                    </h1>
                     <p className="text-gray-500 mt-1">Real-time infrastructure & security monitoring.</p>
                 </div>
-                <button onClick={fetchSystemData} className="p-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"><RefreshCw size={20} className="text-gray-500" /></button>
+                <button onClick={() => fetchSystemData(false)} className="p-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"><RefreshCw size={20} className="text-gray-500" /></button>
             </div>
 
             {/* KPI CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <StatusCard title="Total Users" value={metrics.totalUsers} icon={<Users className="text-blue-500" />} sub="Table: users" />
                 <StatusCard title="Flight Data" value={metrics.flightPositions.toLocaleString()} icon={<Database className="text-purple-500" />} sub="Table: flight_positions" color="bg-purple-50 dark:bg-purple-900/20" />
-                
-                {/* Failed Jobs Clicable */}
                 <div onClick={handleOpenErrors} className={`cursor-pointer transition-transform hover:scale-[1.02] active:scale-95 ${metrics.failedJobs > 0 ? "bg-red-50 dark:bg-red-900/20 border-red-200 ring-2 ring-red-100 dark:ring-red-900/30" : "bg-green-50"} p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700`}>
                     <div className="flex justify-between items-start mb-2">
                         <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"><AlertOctagon className={metrics.failedJobs > 0 ? "text-red-500" : "text-green-500"} /></div>
@@ -172,7 +190,6 @@ export default function AdminDashboard() {
                     <div className="text-sm text-gray-500 dark:text-gray-400">Failed Jobs</div>
                     <div className="text-[10px] font-mono text-gray-400 mt-2 uppercase">Laravel Queue</div>
                 </div>
-
                 <StatusCard title="System Logs" value={metrics.logsCount} icon={<FileText className="text-gray-500" />} sub="Telescope Entries" />
             </div>
 
@@ -181,16 +198,15 @@ export default function AdminDashboard() {
                 <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
                     <TabButton active={activeTab === 'infrastructure'} onClick={() => setActiveTab('infrastructure')} icon={<CloudLightning size={18}/>} label="Infrastructure" />
                     <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Shield size={18}/>} label="Security" />
+                    <TabButton active={activeTab === 'database'} onClick={() => setActiveTab('database')} icon={<Database size={18}/>} label="Performance" />
                     <TabButton active={activeTab === 'system'} onClick={() => setActiveTab('system')} icon={<Settings size={18}/>} label="System Tools" />
                 </div>
 
                 <div className="p-6">
-                    
-                    {/* TAB 1: INFRAESTRUCTURA */}
+                    {/* INFRASTRUCTURE */}
                     {activeTab === 'infrastructure' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* OpenSky */}
                                 <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 relative bg-white dark:bg-gray-800 shadow-sm">
                                     <div className="flex justify-between items-start mb-4">
                                         <div><h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2"><Globe size={18} className="text-blue-500"/> OpenSky Network</h3><p className="text-xs text-gray-500">Public Flight API Status</p></div>
@@ -202,7 +218,6 @@ export default function AdminDashboard() {
                                         <button onClick={handlePingOpenSky} disabled={pinging} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition disabled:opacity-50">{pinging ? '...' : <Zap size={14} />}{pinging ? 'Pinging...' : 'Test Latency'}</button>
                                     </div>
                                 </div>
-                                {/* AI */}
                                 <div className="border border-indigo-100 dark:border-indigo-900 rounded-xl p-5 relative bg-indigo-50/50 dark:bg-indigo-900/10">
                                     <div className="absolute top-0 right-0 p-4 opacity-5"><Brain size={80} /></div>
                                     <div className="flex justify-between items-start mb-4">
@@ -212,7 +227,6 @@ export default function AdminDashboard() {
                                     <div className="font-mono text-xs text-indigo-800 dark:text-indigo-300 mt-8">AI Status: Ready (Model v2.1 loaded)</div>
                                 </div>
                             </div>
-                            {/* AI Logs Table */}
                             <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                                 <div className="bg-gray-50 dark:bg-gray-700/50 p-3 border-b border-gray-200 flex justify-between"><h4 className="font-bold text-sm text-gray-700 dark:text-gray-200 flex items-center gap-2"><Terminal size={16}/> Inference Logs</h4></div>
                                 <table className="w-full text-left text-sm">
@@ -223,7 +237,7 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* TAB 2: USUARIOS */}
+                    {/* USERS */}
                     {activeTab === 'users' && (
                         <div className="animate-in fade-in">
                             <table className="w-full text-left border-collapse">
@@ -242,12 +256,68 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* TAB 3: SYSTEM TOOLS */}
+                   {/* PERFORMANCE & DATABASE */}
+                    {activeTab === 'database' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
+                            {/* 1. PETICIONES RECIENTES (LIVE TRAFFIC) */}
+                            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Activity size={18} className="text-blue-500"/> Recent Traffic
+                                </h3>
+                                <div className="space-y-3">
+                                    {perfData.recent.length > 0 ? perfData.recent.map((req, i) => (
+                                        <div key={i} className="flex items-center justify-between p-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg border border-transparent hover:border-gray-100 transition-colors">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase w-10 text-center ${
+                                                    req.method === 'GET' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
+                                                    req.method === 'POST' ? 'bg-green-50 text-green-600 border-green-100' : 
+                                                    req.method === 'DELETE' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-50'
+                                                }`}>{req.method}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-mono text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={req.endpoint}>{req.endpoint}</span>
+                                                    <span className="text-[10px] text-gray-400">{req.time_ago}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                <span className={`text-[10px] font-bold ${req.status_code >= 400 ? 'text-red-500' : 'text-gray-400'}`}>{req.status_code}</span>
+                                                <div className={`w-14 text-right font-bold text-xs ${req.response_time > 500 ? 'text-orange-500' : 'text-green-600'}`}>{Math.round(req.response_time)} ms</div>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="p-8 text-center text-gray-400 text-sm italic border border-dashed rounded-lg">No traffic recorded yet.</div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* 2. ENDPOINTS LENTOS (SLOWEST) */}
+                            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <AlertOctagon size={18} className="text-orange-500"/> Slowest Endpoints (Avg)
+                                </h3>
+                                <div className="space-y-3">
+                                    {perfData.slowest.length > 0 ? perfData.slowest.map((ep, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${ep.method === 'GET' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{ep.method}</span>
+                                                <span className="text-xs font-mono text-gray-700 dark:text-gray-300 truncate" title={ep.endpoint}>{ep.endpoint}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                <span className="text-[10px] text-gray-400">{ep.calls} calls</span>
+                                                <div className={`w-16 text-right font-bold text-xs ${ep.avg_time > 1000 ? 'text-red-500' : ep.avg_time > 500 ? 'text-orange-500' : 'text-green-500'}`}>{Number(ep.avg_time).toFixed(0)} ms</div>
+                                            </div>
+                                        </div>
+                                    )) : <div className="p-4 text-center text-gray-400 text-sm italic">No slow requests recorded yet.</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SYSTEM TOOLS */}
                     {activeTab === 'system' && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in">
                             <div className="md:col-span-1 space-y-4">
                                 <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
-                                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Settings size={18} className="text-gray-500"/> Maintenance Actions</h3>
+                                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Settings size={18} className="text-gray-500"/> Maintenance</h3>
                                     <div className="space-y-3">
                                         <SystemButton onClick={() => runSystemCommand('clear_cache', 'php artisan cache:clear')} label="Clear App Cache" desc="Removes temporary data" color="blue" disabled={executing} />
                                         <SystemButton onClick={() => runSystemCommand('clear_config', 'php artisan config:clear')} label="Flush Config" desc="Reloads .env variables" color="purple" disabled={executing} />

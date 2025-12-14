@@ -260,7 +260,7 @@ const navigate = useNavigate();
             <div className="flight-header">
                 
                 <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
-                    {/* 👇 BOTÓN VOLVER AQUÍ 👇 */}
+                    {/*  BOTÓN VOLVER */}
                     <button 
                         onClick={() => window.history.back()} 
                         className="back-btn-header"
