@@ -33,24 +33,20 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const user = auth.currentUser;
-    
-    if (user) {
-      // OBTENCIÓN DE TOKEN INTELIGENTE:
-      // Firebase comprueba si el token actual sigue vivo. 
-      // Si ha caducado, Firebase genera uno nuevo AUTOMÁTICAMENTE aquí mismo 
-      // Esto garantiza que siempre enviamos credenciales válidas.
+
+    // ❌ NO firmar login
+    const isLoginRequest = config.url?.includes("/login");
+
+    if (user && !isLoginRequest) {
       const token = await getIdToken(user);
-      
-      // Inyección del estándar "Bearer Token" en la cabecera HTTP
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    return config; // Dejamos pasar la petición ya firmada
+
+    return config;
   },
-  (error) => {
-    return Promise.reject(error); // Si falla la configuración, cancelamos
-  }
+  (error) => Promise.reject(error)
 );
+
 
 // ==========================================
 // 3. INTERCEPTOR DE ENTRADA (respuesta)
