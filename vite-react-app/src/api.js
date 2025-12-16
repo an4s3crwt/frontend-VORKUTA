@@ -1,123 +1,98 @@
+// =============================================================================
+// MÓDULO: CLIENTE HTTP (AXIOS) - FIREBASE LOGIN + SANCTUM TOKEN
+// =============================================================================
+
 import axios from "axios";
 import { getIdToken, signOut } from "firebase/auth";
 import { auth } from "./firebase";
 
-// =============================================================================
-// MÓDULO: CLIENTE HTTP (AXIOS)
-// -----------------------------------------------------------------------------
-// Este archivo actúa como una "puerta de enlace" (Gateway) centralizada para todas
-// las comunicaciones entre el Frontend (React) y el Backend (API).
-// 
-// 
-// En lugar de usar 'fetch' en cada componente, configuramos una única instancia
-// que inyecta automáticamente la seguridad (Tokens JWT) y maneja los errores globales.
-// =============================================================================
-
+// ==========================================
 // 1. CONFIGURACIÓN BASE
-// Definimos la URL raíz y las cabeceras estándar para no repetirlas nunca más.
+// ==========================================
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1", // Punto de entrada al Backend
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1",
   headers: {
-    "Content-Type": "application/json", // Estandarización de formato de datos
+    "Content-Type": "application/json",
   },
 });
 
 // ==========================================
-// 2. INTERCEPTOR DE SALIDA (REQUEST)
+// 2. INTERCEPTOR DE REQUEST
 // ==========================================
-// Actúa como un "Portero de Seguridad" antes de que la petición salga del navegador.
-//
-// FUNCIONALIDAD:
-// Antes de enviar cualquier dato al servidor, este código se "cuela" en medio,
-// obtiene el token de seguridad actual del usuario y lo pega en la cabecera.
+// Inserta automáticamente el Sanctum token en todas las peticiones
 api.interceptors.request.use(
   async (config) => {
-    const user = auth.currentUser;
-
-    // ❌ NO firmar login
-    const isLoginRequest = config.url?.includes("/login");
-
-    if (user && !isLoginRequest) {
-      const token = await getIdToken(user);
+    const token = localStorage.getItem("token"); // Sanctum token guardado después del login
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-
 // ==========================================
-// 3. INTERCEPTOR DE ENTRADA (respuesta)
+// 3. INTERCEPTOR DE RESPONSE
 // ==========================================
-// Actúa como una "Red de Seguridad" cuando vuelve la respuesta del servidor.
-//
-// OBJETIVO: RESILIENCIA
-// Si el servidor nos rechaza (Error 401 Unauthorized) porque el token caducó
-// justo en el milisegundo en que viajaba, este código lo captura, renueva el token
-// y REINTENTA la petición original sin que el usuario se entere.
+// Maneja errores globales, especialmente 401 Unauthorized
 api.interceptors.response.use(
-  (response) => response, // Si todo va bien (200 ), pasamos los datos
+  (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const status = error.response?.status;
 
-    // DETECCIÓN DE TOKEN CADUCADO (401)
-    // Condición: Es un error 401, no hemos reintentado ya (para evitar bucles infinitos)
-    // y el usuario sigue logueado en el frontend.
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      auth.currentUser
-    ) {
-      originalRequest._retry = true; // Marcar como "ya reintentado"
-
-      try {
-        console.log(" Token caducado detectado. Iniciando renovación automática...");
-        
-        // 1. Forzamos la renovación del token con Firebase (forceRefresh = true)
-        const token = await getIdToken(auth.currentUser, true); 
-        console.log("Token renovado con éxito.");
-        
-        // 2. Actualizamos la cabecera de la petición original con el token nuevo
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        
-        // 3. Re-ejecutamos la petición original (Axios la vuelve a lanzar)
-        return api(originalRequest); 
-        
-      } catch (tokenError) {
-        // FALLO CRÍTICO DE SEGURIDAD
-        // Si no podemos renovar el token 
-        // expulsamos al usuario inmediatamente para proteger la app.
-        console.error("Error crítico renovando token. Cerrando sesión.", tokenError);
-        await logout(); 
-      }
+    if (status === 401) {
+      // Token inválido o expirado
+      console.warn("Token expirado o inválido. Cerrando sesión...");
+      await logout();
     }
 
-    // Si no es un 401 o falla el reintento, devolvemos el error al componente
-    // para que muestre un mensaje tipo "Error de conexión".
-    return Promise.reject(error); 
+    return Promise.reject(error);
   }
 );
 
 // ==========================================
-// 4. UTILIDAD DE CIERRE DE SESIÓN
+// 4. LOGIN CON FIREBASE (Devuelve Sanctum token)
 // ==========================================
+export const loginWithFirebase = async () => {
+  const user = auth.currentUser;
 
+  if (!user) throw new Error("Usuario no logueado en Firebase.");
+
+  // 1. Obtener Firebase ID token
+  const firebaseToken = await getIdToken(user);
+
+  // 2. Enviar al backend Laravel para recibir Sanctum token
+  const res = await api.post("/login", {}, {
+    headers: { Authorization: `Bearer ${firebaseToken}` },
+  });
+
+  // 3. Guardar token y configurar cabecera global
+  const accessToken = res.data.access_token;
+  localStorage.setItem("token", accessToken);
+  api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+
+  return res.data;
+};
+
+// ==========================================
+// 5. LOGOUT
+// ==========================================
 export const logout = async () => {
   try {
-    await signOut(auth); // Desconexión de Firebase
-    console.log("Usuario desconectado correctamente.");
-    
-    // Limpieza de rastros locales
+    // Firebase sign out
+    await signOut(auth);
+
+    // Limpiar localStorage y cabeceras Axios
     localStorage.removeItem("token");
-    
-    // Invalidamos la cabecera por defecto para futuras peticiones
-    api.defaults.headers.Authorization = "";
-    
+    delete api.defaults.headers.common["Authorization"];
+
+    console.log("Usuario desconectado correctamente.");
   } catch (error) {
-    console.error("Error al desconectar:", error);
+    console.error("Error cerrando sesión:", error);
   }
 };
 
+// ==========================================
+// 6. EXPORT DEFAULT
+// ==========================================
 export default api;
