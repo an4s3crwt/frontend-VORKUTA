@@ -9,66 +9,83 @@ import api from './../api';
 // =============================================================================
 // COMPONENTE: LOGIN (Autenticación)
 // -----------------------------------------------------------------------------
-// Este formulario gestiona el acceso de los usuarios.
-// ARQUITECTURA: Implementa un "Login Híbrido":
-// 1. Firebase Auth: Se encarga de verificar que la contraseña sea correcta (Seguridad).
-// 2. Backend Propio: Una vez verificado, pedimos los datos del perfil a nuestra API.
+// ARQUITECTURA: Login Híbrido (Firebase Client -> Laravel Sanctum)
 // =============================================================================
 
 export default function Login() {
   // --- GESTIÓN DE ESTADO (UI) ---
-  // Controlamos lo que escribe el usuario y el estado visual del formulario.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Para "ver contraseña"
+  const [showPassword, setShowPassword] = useState(false);
   
-  // Feedback al usuario: Errores y Carga
+  // Feedback al usuario
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false); // Bloquea el botón para evitar doble click
+  const [loading, setLoading] = useState(false);
   
-  // Hooks de navegación y estado global
-  const navigate = useNavigate(); // Para redirigir al Home
-  const dispatch = useDispatch(); // Para guardar al usuario en Redux
+  // Hooks
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // --- LÓGICA DE INICIO DE SESIÓN ---
   const handleLogin = async (e) => {
-    e.preventDefault(); // Evitamos que la página se recargue al enviar el form
-    setError(null);     // Limpiamos errores viejos
-    setLoading(true);   // Activamos el spinner
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     try {
-      // PASO 1: SEGURIDAD (Firebase)
-      // Le damos el email y contraseña a Firebase. Si están mal, aquí salta un error (catch).
-      // Esto es seguro porque nosotros nunca guardamos la contraseña real en nuestra BD.
+      console.log('👉 [1/6] Validando credenciales con Firebase...');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // PASO 2: SINCRONIZACIÓN (Backend)
-      // Si Firebase dice "OK", avisamos a nuestro servidor (API) de que el usuario ha entrado.
-      // Esto sirve para obtener datos extra (rol, preferencias, etc.) que Firebase no tiene.
-      const response = await api.post('/login');
-      const backendUser = response.data;
+      console.log('👉 [2/6] Obteniendo ID Token fresco de Firebase...');
+      const firebaseToken = await userCredential.user.getIdToken(true);
 
-      // PASO 3: ESTADO GLOBAL (Redux)
-      // Guardamos al usuario en la memoria global de la App para acceder a él desde cualquier sitio.
-      dispatch(login({ user: backendUser.user, token: null }));
-      
-      // Si todo es correcto redirije a Home 
+      console.log('👉 [3/6] Enviando token a /login en Laravel...');
+      const res = await api.post(
+        '/login',
+        { firebase_token: firebaseToken },
+        {
+          headers: {
+            Authorization: `Bearer ${firebaseToken}`,
+          },
+        }
+      );
+
+      console.log('👉 [4/6] Backend respondió:', res.data);
+      const backendData = res.data;
+      const sanctumToken = backendData.access_token || backendData.token;
+
+      if (!sanctumToken) {
+        throw new Error('El backend no devolvió access_token');
+      }
+
+      console.log('👉 [5/6] Guardando Sanctum token en localStorage y Axios...');
+      localStorage.setItem('token', sanctumToken);
+      api.defaults.headers.common['Authorization'] = `Bearer ${sanctumToken}`;
+
+      // Actualizar estado en Redux
+      dispatch(
+        login({
+          user: backendData.user,
+          token: sanctumToken,
+        })
+      );
+
+      console.log('👉 [6/6] Login completado. Redirigiendo a /...');
       navigate('/');
-      
-    } catch (err) {
-      console.error('Login error:', err);
-      // Mensaje genérico por seguridad (no decir si falla el mail o la contraseñaa)
-      setError('Invalid credentials or connection issue.');
-    }
 
-    setLoading(false); // Apagamos el spinner pase lo que pase
+    } catch (err) {
+      console.error('❌ Error capturado en handleLogin:', err);
+      console.error('Detalles del error:', err.response?.data || err.message);
+      setError('Invalid credentials or connection issue.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ==========================================
   // RENDERIZADO 
   // ==========================================
   return (
-    // Fondo con degradado suave
     <div className="min-h-screen bg-gradient-to-br from-white to-neutral-100 flex items-center justify-center px-4 font-[Inter]">
       
       {/* Tarjeta Central */}
@@ -108,7 +125,6 @@ export default function Login() {
             </label>
             <div className="relative">
               <input
-                // Cambiamos el tipo de 'password' a 'text' si showPassword es true
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -135,11 +151,10 @@ export default function Login() {
           {/* Botón de Submit con Estado de Carga */}
           <button
             type="submit"
-            disabled={loading} // Desactivamos el botón si está cargando
+            disabled={loading}
             className="relative w-full py-3 bg-black text-white text-sm font-medium rounded-xl transition-all duration-300 hover:bg-neutral-900 hover:shadow-[0_0_12px_rgba(0,0,0,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
-              // Si está cargando, mostramos un Spinner  animado
               <span className="flex items-center justify-center">
                 <svg
                   className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
@@ -158,10 +173,7 @@ export default function Login() {
                   <path
                     className="opacity-75"
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 
-                    0 0 5.373 0 12h4zm2 5.291A7.962 
-                    7.962 0 014 12H0c0 3.042 1.135 
-                    5.824 3 7.938l3-2.647z"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
                 Logging in...
@@ -171,7 +183,7 @@ export default function Login() {
             )}
           </button>
 
-          {/* Mensaje de Error  */}
+          {/* Mensaje de Error */}
           {error && (
             <p className="text-xs text-red-500 text-center mt-2 font-medium">
               {error}
@@ -192,7 +204,7 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Footer  */}
+        {/* Footer */}
         <div className="mt-16 text-center text-xs text-neutral-500 tracking-wider">
           <p>© 2025 Flighty. Precision. Design. Flight.</p>
         </div>

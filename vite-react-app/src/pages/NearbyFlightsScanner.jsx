@@ -193,12 +193,16 @@ export default function NearbyFlightsScanner() {
         navigate(`/scanner/${newRadius}`);
     };
 
+  
     // Al hacer clic en un avión de la lista o mapa
     const handleFlightClick = (icao) => {
-        // Guardamos el estado actual antes de irnos para poder volver exactamente aquí
+        if (!icao) return;
+        // Guardamos el estado actual antes de navegar para volver sin perder el radar
         const stateToSave = { location, flights, radius: scanRadius };
         sessionStorage.setItem('scannerState', JSON.stringify(stateToSave));
-        navigate(`/airport/${icao}`);
+        
+        // Redirigir a la vista de detalles del vuelo (no del aeropuerto)
+        navigate(`/flight-info/${icao.toLowerCase()}`);
     };
 
 

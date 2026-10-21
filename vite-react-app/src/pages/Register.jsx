@@ -4,7 +4,7 @@ import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { login } from '../redux/authSlice';
-import api from '../api';
+import { registerWithFirebase } from '../api'; // Usamos la función sincronizadora con Sanctum
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -36,25 +36,30 @@ export default function Register() {
     }
 
     try {
+      // 1. Crear el usuario en Google Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       await updateProfile(userCredential.user, { displayName: formData.name });
-      const user = userCredential.user;
 
-      const response = await api.post('/register', {
-        firebase_uid: user.uid,
-        email: user.email,
-        name: formData.name,
-      });
+      // 2. Sincronizar con Laravel y obtener Token de Sanctum
+      const backendData = await registerWithFirebase(formData.name);
 
-      const backendUser = response.data;
-      dispatch(login({ user: backendUser.user, token: null }));
+      // 3. Guardar en Redux con el token real de la base de datos
+      dispatch(login({ 
+        user: backendData.user, 
+        token: backendData.access_token 
+      }));
+
+      // 4. Redirigir a la vista principal
       navigate('/');
     } catch (err) {
+      console.error("Error completo en registro:", err);
       let message = 'Registration error';
       if (err.code === 'auth/email-already-in-use') {
         message = 'This email is already registered.';
       } else if (err.code === 'auth/invalid-email') {
         message = 'Invalid email address.';
+      } else if (err.response?.data?.error) {
+        message = `Server error: ${err.response.data.error}`;
       }
       setErrors({ general: message });
     } finally {
@@ -165,7 +170,6 @@ export default function Register() {
             </p>
           </div>
 
-          {/* Footer fijo en la columna derecha (alineado abajo en pantallas grandes) */}
           <div className="mt-8 md:mt-auto text-center md:text-right">
             <p className="text-xs text-neutral-500 tracking-wider">
               © 2025 Flighty. Precision. Design. Flight.

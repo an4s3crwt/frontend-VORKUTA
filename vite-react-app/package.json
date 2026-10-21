@@ -69,6 +69,7 @@
     ]
   },
   "devDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.64.12",
     "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
