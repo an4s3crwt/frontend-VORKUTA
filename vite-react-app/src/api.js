@@ -6,7 +6,7 @@ import { auth } from "./firebase";
 // 1. CONFIGURACIÓN BASE
 // ==========================================
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://backend-vorkuta.onrender.com/api/v1",
+  baseURL: "https://backend-vorkuta.onrender.com/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
