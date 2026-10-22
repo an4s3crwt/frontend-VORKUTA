@@ -9,6 +9,7 @@ const api = axios.create({
   baseURL: "https://backend-vorkuta.onrender.com/api/v1",
   headers: {
     "Content-Type": "application/json",
+    "Accept": "application/json", // CLAVE: obliga a Laravel a responder siempre en JSON (401 en vez de redirigir)
   },
 });
 
@@ -17,6 +18,9 @@ const api = axios.create({
 // ==========================================
 api.interceptors.request.use(
   (config) => {
+    // Asegurar siempre cabecera JSON
+    config.headers["Accept"] = "application/json";
+
     const isPublicAuthRoute = config.url?.includes('/login') || config.url?.includes('/register');
 
     if (!isPublicAuthRoute) {
@@ -77,7 +81,7 @@ export const loginWithFirebase = async () => {
 };
 
 // ==========================================
-// 5. REGISTRO CON FIREBASE (Sincroniza con MariaDB y guarda Sanctum)
+// 5. REGISTRO CON FIREBASE
 // ==========================================
 export const registerWithFirebase = async (name) => {
   const user = auth.currentUser;
